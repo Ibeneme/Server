@@ -7,8 +7,8 @@ const router = express.Router();
 
 // Initialize Backblaze B2 client
 const b2 = new B2({
-  applicationKeyId: process.env.applicationKeyId,
-  applicationKey: process.env.applicationKey,
+  applicationKeyId: "e8b3c0128769",
+  applicationKey: "0058f4534e105eb24f3b135703608c66720edf0beb",
 });
 
 // Multer storage configuration for file upload

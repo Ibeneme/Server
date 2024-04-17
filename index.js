@@ -104,7 +104,7 @@ io.on("connection", (socket) => {
     }
   });
 });
-
+//https://server-3qpe.onrender.com/
 app.use("/api/v1/messages", messagesRouter);
 app.use("/api/v1/auth/register/", register);
 app.use("/api/v1/auth/login/", login);

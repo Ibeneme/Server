@@ -6,8 +6,8 @@ const User = require("../../models/Users");
 //const upload = require("./multer");
 
 const b2 = new B2({
-  applicationKeyId: process.env.applicationKeyId,
-  applicationKey: process.env.applicationKey,
+  applicationKeyId: "e8b3c0128769",
+  applicationKey: "0058f4534e105eb24f3b135703608c66720edf0beb",
 });
 
 const storage = multer.memoryStorage();
