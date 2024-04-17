@@ -39,7 +39,7 @@ router.post("/", upload.single("file"), async (req, res) => {
 
     // Get upload URL from B2
     const response = await b2.getUploadUrl({
-      bucketId: process.env.bucketName, // Bucket ID to upload the file to
+      bucketId: 'y0e888bf37c0091f288e70619', // Bucket ID to upload the file to
     });
 
     // Upload file to B2
@@ -51,7 +51,7 @@ router.post("/", upload.single("file"), async (req, res) => {
     });
 
     // Construct avatar URL from uploaded file information
-    const bucketName = process.env.bucketName; // Name of the bucket
+    const bucketName = 'trader-signal-app-v1'; // Name of the bucket
     const uploadedFileName = uploadResponse.data.fileName;
     const avatarUrl = `https://f005.backblazeb2.com/file/${bucketName}/${uploadedFileName}`;
 
