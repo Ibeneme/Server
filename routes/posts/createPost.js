@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require("../../../OTI-BACKEND-SERVER/node_modules/express");
 const Post = require("../../models/Providers/Post");
 const Subscription = require("../../models/Providers/Subscription");
 const {
@@ -6,8 +6,8 @@ const {
 } = require("../../services/mailing/createPostMail");
 const mongoose = require("mongoose");
 const router = express.Router();
-const B2 = require("backblaze-b2");
-const multer = require("multer");
+const B2 = require("../../../OTI-BACKEND-SERVER/node_modules/backblaze-b2");
+const multer = require("../../../OTI-BACKEND-SERVER/node_modules/multer");
 
 const b2 = new B2({
   applicationKeyId: process.env.applicationKeyId,

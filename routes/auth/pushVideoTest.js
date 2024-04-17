@@ -1,7 +1,7 @@
-const B2 = require("backblaze-b2");
-const express = require("express");
+const B2 = require("../../../OTI-BACKEND-SERVER/node_modules/backblaze-b2");
+const express = require("../../../OTI-BACKEND-SERVER/node_modules/express");
 const router = express.Router();
-const multer = require("multer");
+const multer = require("../../../OTI-BACKEND-SERVER/node_modules/multer");
 const User = require("../../models/Users");
 //const upload = require("./multer");
 

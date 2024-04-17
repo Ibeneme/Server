@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require("../../OTI-BACKEND-SERVER/node_modules/express");
 const User = require("../models/Users");
 const authMiddleware = require("../middleware/auth"); // Import the authMiddleware
 const bcrypt = require("bcrypt");

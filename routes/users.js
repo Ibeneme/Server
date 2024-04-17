@@ -3,7 +3,7 @@
 const User = require("../models/Users");
 
 
-const express = require("express");
+const express = require("../../OTI-BACKEND-SERVER/node_modules/express");
 const router = express.Router();
 //Route to get all users
 router.get("/", async (req, res) => {

@@ -1,7 +1,7 @@
 const bcrypt = require("bcrypt");
 const Joi = require("joi");
-const jwt = require("jsonwebtoken");
-const express = require("express");
+const jwt = require("../../OTI-BACKEND-SERVER/node_modules/jsonwebtoken");
+const express = require("../../OTI-BACKEND-SERVER/node_modules/express");
 const genAuthToken = require("../utils/genAuthToken");
 const User = require("../models/Users");
 

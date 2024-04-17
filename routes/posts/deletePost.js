@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require("../../../OTI-BACKEND-SERVER/node_modules/express");
 const Post = require("../../models/Providers/Post");
 
 const router = express.Router();

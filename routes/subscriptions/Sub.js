@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require("../../../OTI-BACKEND-SERVER/node_modules/express");
 const Subscription = require("../../models/Providers/Subscription");
 const User = require("../../models/Users");
 const Post = require("../../models/Providers/Post");

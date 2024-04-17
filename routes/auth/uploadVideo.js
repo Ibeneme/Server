@@ -1,6 +1,6 @@
-const express = require("express");
+const express = require("../../../OTI-BACKEND-SERVER/node_modules/express");
 const router = express.Router();
-const multer = require("multer");
+const multer = require("../../../OTI-BACKEND-SERVER/node_modules/multer");
 const User = require("../../models/Users");
 
 const storage = multer.memoryStorage();

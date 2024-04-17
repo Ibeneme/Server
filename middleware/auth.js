@@ -1,5 +1,5 @@
-const express = require("express");
-const jwt = require("jsonwebtoken");
+const express = require("../../OTI-BACKEND-SERVER/node_modules/express");
+const jwt = require("../../OTI-BACKEND-SERVER/node_modules/jsonwebtoken");
 
 const authMiddleware = (req, res, next) => {
   const secretKey = 'ibenemeSignalApp';
