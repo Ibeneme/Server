@@ -92,7 +92,7 @@ router.post(
   async (req, res) => {
     try {
       const {
-        subscriberId,
+        //subscriberId,
         title,
         durationInDays,
         price,
@@ -103,6 +103,7 @@ router.post(
 
       const firstName = req.user.firstName;
       const lastName = req.user.lastName;
+      const subscriberId = req.user?._id
 
       if (!req.file || !req.file.buffer) {
         return res.status(400).json({ error: "No file uploaded" });
@@ -129,7 +130,7 @@ router.post(
       });
       const bucketName = "trader-signal-app-v1"; // Name of the bucket
       const uploadedFileName = uploadResponse.data.fileName;
-      const avatarUrl = `https://f005.backblazeb2.com/file/${bucketName}/${uploadedFileName}`;
+      const avatarUrl = `https://f005.backblazeb2.com/file/subscriptionstatus${bucketName}/${uploadedFileName}`;
 
       console.log(avatarUrl, "avatarUrl");
       const newStatusData = {
