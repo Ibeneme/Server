@@ -13,8 +13,8 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Endpoint for uploading profile photo or video
-router.post("/:userId", upload.single("file"), async (req, res) => {
-  const userId = req.params.userId;
+router.post("/", upload.single("file"), async (req, res) => {
+  const userId = req.user._id; 
   try {
     console.log(req.file, "req.files");
     if (!req.file || !req.file.buffer) {
