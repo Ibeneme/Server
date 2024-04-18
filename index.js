@@ -58,13 +58,14 @@ const communityIo = new Server(server, {
 
 communityIo.on("connection", (socket) => {
   console.log("a user connected to community chat");
-  socket.on("join community", async (userId, communityId) => {
+  socket.on("join community", async (userId) => {
     socket.leaveAll();
-    socket.join(communityId);
-    console.log(`User ${userId} joined community ${communityId}`);
+    // Assuming there's only one community room
+    socket.join("community");
+    console.log(`User ${userId} joined the community`);
     // Implement fetching previous messages for the community if needed
   });
-  socket.on("community message", async (userId, msg, communityId) => {
+  socket.on("community message", async (userId, msg) => {
     console.log(`User ${userId} sent message: ${msg?.msg}`);
     console.log(msg, "msg");
     try {
@@ -72,7 +73,7 @@ communityIo.on("connection", (socket) => {
       const message = msg;
 
       console.log(message, "message");
-      communityIo.to(communityId).emit("community message", message);
+      communityIo.to("community").emit("community message", message);
     } catch (error) {
       console.error("Error saving message:", error);
     }
