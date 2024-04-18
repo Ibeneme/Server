@@ -1,4 +1,3 @@
-
 const cors = require("cors");
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -70,7 +69,10 @@ communityIo.on("connection", (socket) => {
     console.log(msg, "msg");
     try {
       // Your message handling logic for the community chat
-      const message = msg;
+      const message = {
+        userId: userId,
+        msg: msg?.msg,
+      };
 
       console.log(message, "message");
       communityIo.to("community").emit("community message", message);
@@ -79,7 +81,6 @@ communityIo.on("connection", (socket) => {
     }
   });
 });
-
 
 io.on("connection", (socket) => {
   console.log("a user connected");
@@ -135,7 +136,6 @@ io.on("connection", (socket) => {
     }
   });
 });
-
 
 //https://server-3qpe.onrender.com/
 app.use("/api/v1/messages", messagesRouter);
