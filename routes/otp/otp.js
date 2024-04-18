@@ -1,5 +1,7 @@
-const express = require("../../../OTI-BACKEND-SERVER/node_modules/express");
-const otpGenerator = require("../../../OTI-BACKEND-SERVER/node_modules/otp-generator");
+
+
+const express = require("express");
+const otpGenerator = require("otp-generator");
 const { sendOTP } = require("../../services/mailing/sendMail");
 const localVariables = require("../../middleware/localVariable");
 const User = require("../../models/Users");

@@ -1,5 +1,5 @@
-const express = require("../../../OTI-BACKEND-SERVER/node_modules/express");
-const multer = require("../../../OTI-BACKEND-SERVER/node_modules/multer");
+const express = require("express");
+const multer = require("multer");
 const path = require("path");
 const mongoose = require("mongoose"); // Import Mongoose
 

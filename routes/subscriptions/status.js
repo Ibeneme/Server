@@ -1,10 +1,10 @@
-const express = require("../../../OTI-BACKEND-SERVER/node_modules/express");
+const express = require("express");
 const Status = require("../../models/Providers/Status");
 const Subscription = require("../../models/Providers/Subscription");
 const User = require("../../models/Users");
 const router = express.Router();
-const B2 = require("../../../OTI-BACKEND-SERVER/node_modules/backblaze-b2");
-const multer = require("../../../OTI-BACKEND-SERVER/node_modules/multer");
+const B2 = require("backblaze-b2");
+const multer = require("multer");
 
 // Backblaze B2 credentials
 const applicationKeyId = "e8b3c0128769";

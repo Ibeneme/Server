@@ -1,8 +1,10 @@
-const express = require("../../OTI-BACKEND-SERVER/node_modules/express");
+
+const express = require("express");
 const User = require("../models/Users");
 const authMiddleware = require("../middleware/auth"); // Import the authMiddleware
 const bcrypt = require("bcrypt");
 const router = express.Router();
+
 
 router.put("/", async (req, res) => {
   const userEmail = req.user.email; // Extracting the user email from the token

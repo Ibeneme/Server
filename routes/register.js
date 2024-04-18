@@ -1,12 +1,12 @@
 
 const Joi = require("joi");
-const jwt = require("../../OTI-BACKEND-SERVER/node_modules/jsonwebtoken");
-const express = require("../../OTI-BACKEND-SERVER/node_modules/express");
+
+const express = require("express");
 const genAuthToken = require("../utils/genAuthToken");
 const User = require("../models/Users");
 const bcrypt = require("bcrypt");
 const router = express.Router();
-
+const jwt = require("jsonwebtoken");
 const validate = require("crypto-address-validators"); // Import validate function using CommonJS syntax
 
 router.get("/", (req, res) => {

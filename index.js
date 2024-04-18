@@ -1,6 +1,7 @@
-const express = require("../OTI-BACKEND-SERVER/node_modules/express/index.js");
-const cors = require("../OTI-BACKEND-SERVER/node_modules/@types/cors/index.js");
-const bodyParser = require("../OTI-BACKEND-SERVER/node_modules/body-parser/index.js");
+
+const cors = require("cors");
+const express = require("express");
+const bodyParser = require("body-parser");
 const register = require("./routes/register.js");
 const login = require("./routes/login.js");
 const mongoose = require("mongoose");

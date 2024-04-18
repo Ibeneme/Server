@@ -1,7 +1,7 @@
 
 const jwtSecretKey = 'ibenemeSignalApp';
-const jwt = require("../../OTI-BACKEND-SERVER/node_modules/jsonwebtoken");
 
+const jwt = require("jsonwebtoken");
 const genAuthToken = (user) => {
   const secretKey = jwtSecretKey;
 

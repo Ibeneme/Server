@@ -1,10 +1,10 @@
 const bcrypt = require("bcrypt");
 const Joi = require("joi");
-const jwt = require("../../OTI-BACKEND-SERVER/node_modules/jsonwebtoken");
-const express = require("../../OTI-BACKEND-SERVER/node_modules/express");
+
+const express = require("express");
 const genAuthToken = require("../utils/genAuthToken");
 const User = require("../models/Users");
-
+const jwt = require("jsonwebtoken");
 const router = express.Router();
 
 router.post("/", async (req, res) => {

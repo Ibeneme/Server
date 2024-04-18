@@ -1,4 +1,4 @@
-const express = require('../../../OTI-BACKEND-SERVER/node_modules/express');
+const express = require('express');
 const Withdrawal = require('../../models/Providers/Withdrawal');
 const Status = require('../../models/Providers/Status');
 const router = express.Router();
