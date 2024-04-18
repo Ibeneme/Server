@@ -50,6 +50,35 @@ const io = new Server(server, {
     origin: "*",
   },
 });
+const communityIo = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+communityIo.on("connection", (socket) => {
+  console.log("a user connected to community chat");
+  socket.on("join community", async (userId, communityId) => {
+    socket.leaveAll();
+    socket.join(communityId);
+    console.log(`User ${userId} joined community ${communityId}`);
+    // Implement fetching previous messages for the community if needed
+  });
+  socket.on("community message", async (userId, msg, communityId) => {
+    console.log(`User ${userId} sent message: ${msg?.msg}`);
+    console.log(msg, "msg");
+    try {
+      // Your message handling logic for the community chat
+      const message = msg;
+
+      console.log(message, "message");
+      communityIo.to(communityId).emit("community message", message);
+    } catch (error) {
+      console.error("Error saving message:", error);
+    }
+  });
+});
+
 
 io.on("connection", (socket) => {
   console.log("a user connected");
@@ -105,6 +134,8 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+
 //https://server-3qpe.onrender.com/
 app.use("/api/v1/messages", messagesRouter);
 app.use("/api/v1/auth/register/", register);
