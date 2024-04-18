@@ -29,7 +29,7 @@ router.post("/:userId", upload.single("file"), async (req, res) => {
     await b2.authorize();
 
     const response = await b2.getUploadUrl({
-      bucketId: "y0e888bf37c0091f288e70619",
+      bucketId: "0e888bf37c0091f288e70619",
     });
 
     const uploadResponse = await b2.uploadFile({

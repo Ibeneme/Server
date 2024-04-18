@@ -40,7 +40,7 @@ router.put("/", upload.single("file"), async (req, res) => {
 
     // Get upload URL from B2
     const response = await b2.getUploadUrl({
-      bucketId: "y0e888bf37c0091f288e70619", // Bucket ID to upload the file to
+      bucketId: "0e888bf37c0091f288e70619", // Bucket ID to upload the file to
     });
 
     // Upload file to B2
