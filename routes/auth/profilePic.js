@@ -17,7 +17,7 @@ const upload = multer({ storage: storage });
 
 // POST endpoint for uploading profile photo
 
-router.post("/", upload.single("file"), async (req, res) => {
+router.put("/", upload.single("file"), async (req, res) => {
   try {
     // Extract user email from request parameters
     const userEmail = req.user.email; // Assuming userEmail is the property that holds the user email in the token
