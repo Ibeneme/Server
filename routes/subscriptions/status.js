@@ -7,13 +7,12 @@ const B2 = require("backblaze-b2");
 const multer = require("multer");
 
 // Backblaze B2 credentials
-const applicationKeyId = "e8b3c0128769";
-const applicationKey = "005dc4424d6d6f2027ce61b07b1920a5e8e3bc1f03";
 
 // Initialize Backblaze B2 client
 const b2 = new B2({
-  applicationKeyId: applicationKeyId,
-  applicationKey: applicationKey,
+  applicationKeyId: "e8b3c0128769",
+  applicationKey: "0058f4534e105eb24f3b135703608c66720edf0beb",
+
 });
 
 // Multer storage configuration for file upload
