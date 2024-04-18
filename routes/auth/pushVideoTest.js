@@ -3,7 +3,6 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const User = require("../../models/Users");
-//const upload = require("./multer");
 
 const b2 = new B2({
   applicationKeyId: "e8b3c0128769",
@@ -13,6 +12,7 @@ const b2 = new B2({
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
+// Endpoint for uploading profile photo or video
 router.post("/:userId", upload.single("file"), async (req, res) => {
   const userId = req.params.userId;
   try {
@@ -43,16 +43,22 @@ router.post("/:userId", upload.single("file"), async (req, res) => {
     const bucketName = "trader-signal-app-v1";
     const uploadedFileName = uploadResponse.data.fileName;
 
-    const avatarUrl = `https://f005.backblazeb2.com/file/${bucketName}/${uploadedFileName}`;
+    const fileUrl = `https://f005.backblazeb2.com/file/${bucketName}/${uploadedFileName}`;
 
-    console.log(avatarUrl, "avatarUrl");
+    // Update user profile with file URL (photo or video)
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: userId }, // Finding user by ID
+      { $set: { profilePhotoOrVideo: fileUrl } },
+      { new: true }
+    );
 
-    res.status(200).send({ message: "Photo Uploaded Successfully!" });
+    console.log(updatedUser, 'updatedUser');
+
+    // Send success response
+    res.status(200).send({ message: "File Uploaded Successfully!" });
   } catch (error) {
     console.log("Error uploading file:", error);
-    res
-      .status(500)
-      .send({ message: "Internal Server Error", error: error.message });
+    res.status(500).send({ message: "Internal Server Error", error: error.message });
   }
 });
 

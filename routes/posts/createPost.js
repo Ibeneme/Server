@@ -10,8 +10,8 @@ const B2 = require("backblaze-b2");
 const multer = require("multer");
 
 const b2 = new B2({
-  applicationKeyId: process.env.applicationKeyId,
-  applicationKey: process.env.applicationKey,
+  applicationKeyId: "e8b3c0128769",
+  applicationKey: "0058f4534e105eb24f3b135703608c66720edf0beb",
 });
 
 // Multer storage configuration for file upload
@@ -42,7 +42,7 @@ router.post("/:subscriptionId", upload.single("images"), async (req, res) => {
 
       // Get upload URL from B2
       const response = await b2.getUploadUrl({
-        bucketId: process.env.bucketId, // Bucket ID to upload the file to
+        bucketId: "0e888bf37c0091f288e70619", // Bucket ID to upload the file to
       });
 
       const uploadResponse = await b2.uploadFile({
@@ -53,7 +53,7 @@ router.post("/:subscriptionId", upload.single("images"), async (req, res) => {
       });
 
       // Construct avatar URL from uploaded file information
-      const bucketName = process.env.bucketName; // Name of the bucket
+      const bucketName = "trader-signal-app-v1"; // Name of the bucket
       const uploadedFileName = uploadResponse.data.fileName;
       avatarUrl = `https://f005.backblazeb2.com/file/${bucketName}/${uploadedFileName}`;
     }

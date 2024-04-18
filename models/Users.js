@@ -60,6 +60,7 @@ const UserSchema = new mongoose.Schema(
     kyc: {
       contentType: { type: String, default: null },
     },
+    profilePhotoOrVideo: { type: String, default: null },
     subscriptions: [
       { type: mongoose.Schema.Types.ObjectId, ref: "Subscription" },
     ],
