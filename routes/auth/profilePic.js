@@ -26,9 +26,10 @@ router.put("/", upload.single("file"), async (req, res) => {
     if (!req.file || !req.file.buffer) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-
-    // Extract file data
     const fileBuffer = req.file.buffer;
+    console.log(userEmail, fileBuffer, req.file); // There is a typo here, it should be req.file instead of file
+    // Extract file data
+
     const fileName = `providers/${Date.now()}_${req.file.originalname.replace(
       /\s+/g,
       "_"
@@ -39,7 +40,7 @@ router.put("/", upload.single("file"), async (req, res) => {
 
     // Get upload URL from B2
     const response = await b2.getUploadUrl({
-      bucketId: 'y0e888bf37c0091f288e70619', // Bucket ID to upload the file to
+      bucketId: "y0e888bf37c0091f288e70619", // Bucket ID to upload the file to
     });
 
     // Upload file to B2
@@ -50,8 +51,9 @@ router.put("/", upload.single("file"), async (req, res) => {
       data: fileBuffer,
     });
 
+    console.log(uploadResponse, "uploadResponse");
     // Construct avatar URL from uploaded file information
-    const bucketName = 'trader-signal-app-v1'; // Name of the bucket
+    const bucketName = "trader-signal-app-v1"; // Name of the bucket
     const uploadedFileName = uploadResponse.data.fileName;
     const avatarUrl = `https://f005.backblazeb2.com/file/${bucketName}/${uploadedFileName}`;
 
@@ -62,6 +64,7 @@ router.put("/", upload.single("file"), async (req, res) => {
       { new: true }
     ).select("-password -token");
 
+    console.log(updatedUser, "updatedUser");
     // Check if user is found
     if (!updatedUser) {
       return res.status(404).send({ error: "User not found" });
