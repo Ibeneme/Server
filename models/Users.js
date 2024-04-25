@@ -1,15 +1,11 @@
-
-
-
 const mongoose = require("mongoose");
 const UserSchema = new mongoose.Schema(
   {
     username: {
       type: String,
-      require: true,
       minlength: 3,
       maxlength: 30,
-      unique: true,
+      // unique: true,
     },
     deleted: { type: Boolean, default: false },
     firstName: { type: String, require: true, minlength: 3, maxlength: 30 },

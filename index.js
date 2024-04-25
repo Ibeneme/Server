@@ -38,7 +38,15 @@ const messagesRouter = require("./routes/Messages.js");
 const Post = require("./models/Providers/Post.js");
 const rating = require("./routes/rating/rating.js");
 const withdraws = require("./routes/withdrawal/withdrawal.js");
+const allCommunityChats = require("./routes/chats/chat.js");
+
+const initializeChatRouter = require("./routes/chats/chatRouter.js");
+const User = require("./models/Users.js");
+const CommunityChat = require("./models/CommunityChat.js");
 require("dotenv").config();
+
+const chatRouter = initializeChatRouter(server);
+app.use("/chat", chatRouter);
 
 app.use(express.json());
 app.use(bodyParser.json());
@@ -55,29 +63,75 @@ const communityIo = new Server(server, {
   },
 });
 
-communityIo.on("connection", (socket) => {
-  console.log("a user connected to community chat");
-  socket.on("join community", async (userId) => {
-    socket.leaveAll();
-    // Assuming there's only one community room
-    socket.join("community");
-    console.log(`User ${userId} joined the community`);
-    // Implement fetching previous messages for the community if needed
-  });
-  socket.on("community message", async (userId, msg) => {
-    console.log(`User ${userId} sent message: ${msg?.msg}`);
-    console.log(msg, "msg");
-    try {
-      // Your message handling logic for the community chat
-      const message = {
-        userId: userId,
-        msg: msg?.msg,
-      };
+io.on("connection", (socket) => {
+  console.log("New client connected:", socket.id);
 
-      console.log(message, "message");
-      communityIo.to("community").emit("community message", message);
+  // Handle chat messages
+  socket.on("message", (data) => {
+    console.log("Message received:", data);
+    io.emit("message", data); // Broadcast message to all connected clients
+  });
+
+  // Handle disconnection
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+  });
+});
+
+communityIo.on("connection", (socket) => {
+  socket.on("join community", async (userId) => {
+    try {
+      socket.leaveAll();
+      socket.join("community");
+
+      // Fetch user from the User model
+      const user = await User.findById(userId);
+      if (!mongoose.isValidObjectId(userId)) {
+        console.log(`Invalid userId: ${userId}`);
+        return;
+      }
+      if (user) {
+        // If user exists, emit the first name and last name to the client
+        const { firstName, lastName } = user;
+        socket.emit("user details", { firstName, lastName });
+
+        console.log(`User ${userId} joined the community`);
+      } else {
+        console.log(`User ${userId} not found`);
+      }
     } catch (error) {
-      console.error("Error saving message:", error);
+      console.error("Error joining community:", error);
+    }
+  });
+
+  socket.on("community message", async (userId, msg) => {
+    try {
+      console.log(`User ${userId} sent message: ${msg?.msg}`);
+
+      // Fetch user from the User model to ensure first name and last name
+      const user = await User.findById(userId);
+      if (user) {
+        const { firstName, lastName } = user;
+
+        // Create a new CommunityChat message
+        const newMessage = new CommunityChat({
+          userId: userId,
+          firstName: firstName,
+          lastName: lastName,
+          message: msg?.msg,
+          timestamp: new Date().toISOString(),
+        });
+
+        // Save the message to the database
+        const savedMessage = await newMessage.save();
+
+        console.log(savedMessage, "message");
+        communityIo.to("community").emit("community message", savedMessage);
+      } else {
+        console.log(`User ${userId} not found while sending message`);
+      }
+    } catch (error) {
+      console.error("Error handling community message:", error);
     }
   });
 });
@@ -170,6 +224,7 @@ app.use("/api/v1/status/", authMiddleware, status);
 app.use("/api/v1/withdraws/", authMiddleware, withdraws);
 
 app.use("/api/v1/rating/", authMiddleware, rating);
+app.use("/api/v1/allCommunityChats/", authMiddleware, allCommunityChats);
 
 app.disable("x-powered-by");
 
