@@ -122,7 +122,7 @@ communityIo.on("connection", (socket) => {
   });
 });
 
-io.on("connection", (socket) => {
+communityIo.on("connection", (socket) => {
   console.log("a user connected");
   socket.on("join group", async (userId, postID) => {
     socket.leaveAll();
@@ -170,7 +170,7 @@ io.on("connection", (socket) => {
       const message = msg;
 
       console.log(message, "message");
-      io.to(postID).emit("chat message", message);
+      communityIo.to(postID).emit("chat message", message);
     } catch (error) {
       console.error("Error saving message:", error);
     }
