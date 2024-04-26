@@ -57,25 +57,11 @@ const io = new Server(server, {
     origin: "*",
   },
 });
+
 const communityIo = new Server(server, {
   cors: {
     origin: "*",
   },
-});
-
-io.on("connection", (socket) => {
-  console.log("New client connected:", socket.id);
-
-  // Handle chat messages
-  socket.on("message", (data) => {
-    console.log("Message received:", data);
-    io.emit("message", data); // Broadcast message to all connected clients
-  });
-
-  // Handle disconnection
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-  });
 });
 
 communityIo.on("connection", (socket) => {
@@ -171,7 +157,7 @@ io.on("connection", (socket) => {
             user: userId, // Assuming you have user authentication
             msg: msg?.msg, // Assuming comment text is in request body
           };
-
+          //Admin@Password??? admin4@acadaboo.com https://www.acadaboo.com/admin
           post.comments.push(newComment);
           console.log(newComment, "newComment");
           return post.save();
@@ -224,7 +210,7 @@ app.use("/api/v1/status/", authMiddleware, status);
 app.use("/api/v1/withdraws/", authMiddleware, withdraws);
 
 app.use("/api/v1/rating/", authMiddleware, rating);
-app.use("/api/v1/allCommunityChats/", authMiddleware, allCommunityChats);
+app.use("/api/v1/allCommunityChats/", allCommunityChats);
 
 app.disable("x-powered-by");
 
