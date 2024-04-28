@@ -2,10 +2,12 @@ const express = require("express");
 const WaitingListUser = require("../../models/waitingList/WaitingListUser");
 const router = express.Router();
 
-router.post("/", async (req, res) => {
+router.post("/:email", async (req, res) => {
   try {
-    const { fullName, email } = req.body;
+    const { fullName } = req.body;
+    const { email } = req.params;
 
+    console.log(email, "email", fullName, "fullName");
     if (!fullName || !email) {
       return res
         .status(400)
@@ -31,16 +33,14 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-  const waitingUsers = await WaitingListUser.find();
+    const waitingUsers = await WaitingListUser.find();
     res.json(waitingUsers); // Send the waiting users as JSON response
   } catch (error) {
-    console.error('Error fetching waiting users:', error);
-    res.status(500).json({ error: 'Internal server error' }); // Send error response
+    console.error("Error fetching waiting users:", error);
+    res.status(500).json({ error: "Internal server error" }); // Send error response
   }
 });
-
-
 
 module.exports = router;

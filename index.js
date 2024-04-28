@@ -51,7 +51,7 @@ app.use("/chat", chatRouter);
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(localVariables);
-
+app.use(cors());
 const io = new Server(server, {
   cors: {
     origin: "*",
