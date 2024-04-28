@@ -39,7 +39,7 @@ const Post = require("./models/Providers/Post.js");
 const rating = require("./routes/rating/rating.js");
 const withdraws = require("./routes/withdrawal/withdrawal.js");
 const allCommunityChats = require("./routes/chats/chat.js");
-
+const waitingList = require('./routes/waitingList/waitingList.js')
 const initializeChatRouter = require("./routes/chats/chatRouter.js");
 const User = require("./models/Users.js");
 const CommunityChat = require("./models/CommunityChat.js");
@@ -211,6 +211,7 @@ app.use("/api/v1/withdraws/", authMiddleware, withdraws);
 
 app.use("/api/v1/rating/", authMiddleware, rating);
 app.use("/api/v1/allCommunityChats/", allCommunityChats);
+app.use("/api/v1/waiting-list", waitingList);
 
 app.disable("x-powered-by");
 
