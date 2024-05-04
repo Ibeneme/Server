@@ -31,6 +31,7 @@ const SubscriptionSchema = new mongoose.Schema(
         durationPaidFor: { type: Number },
         isExpired: { type: Boolean, default: false },
         twoDaysToExpire: { type: Boolean, default: false },
+        email:  { type: String },
       },
     ],
   },

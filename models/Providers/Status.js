@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const StatusSchema = new mongoose.Schema(
   {
+    id: { type: String, default: null },
     durationInDays: { type: Number, required: true },
     price: { type: Number, required: true },
     status: { type: String, default: null },

@@ -49,6 +49,7 @@ const UserSchema = new mongoose.Schema(
     profilePhoto: { type: String, default: null },
     bio: { type: String, default: null },
     verified: { type: Boolean, default: false },
+    communitySubscribed: { type: Boolean, default: false },
     averagePrice: { type: Number, default: 0 },
     provider: { type: Boolean, default: false },
     profilePhoto: { type: String },

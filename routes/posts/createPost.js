@@ -59,7 +59,7 @@ router.post("/:subscriptionId", upload.single("images"), async (req, res) => {
     }
 
     console.log(_id, "userId");
-    const subscribedUsers = []; // Initialize empty array for subscribed users
+    //const subscribedUsers = []; // Initialize empty array for subscribed users
 
     // Validate the subscription ID
     if (!mongoose.isValidObjectId(subscriptionId)) {
@@ -87,6 +87,18 @@ router.post("/:subscriptionId", upload.single("images"), async (req, res) => {
     // Save the post to the database
     await post.save();
 
+    // Send email notification to all subscribed users
+    //  await sendPostNotificationEmail(subscribedUsers, post);
+
+    const subscription = await Subscription.findById(subscriptionId);
+
+    if (!subscription) {
+      return res.status(404).json({ error: "Subscription not found" });
+    }
+
+    // Get the subscribed users from the subscription document
+    const subscribedUsers = subscription.users;
+    console.log(subscribedUsers, "subscribedUsers");
     // Send email notification to all subscribed users
     await sendPostNotificationEmail(subscribedUsers, post);
 

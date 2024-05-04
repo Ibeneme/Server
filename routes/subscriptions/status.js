@@ -5,6 +5,12 @@ const User = require("../../models/Users");
 const router = express.Router();
 const B2 = require("backblaze-b2");
 const multer = require("multer");
+const {
+  sendSubscriptionRequestConfirmation,
+} = require("../../services/mailing/joinedSub");
+const {
+  sendSubscriptionStatusNotification,
+} = require("../../services/mailing/subNotifications");
 
 // Backblaze B2 credentials
 
@@ -12,7 +18,6 @@ const multer = require("multer");
 const b2 = new B2({
   applicationKeyId: "e8b3c0128769",
   applicationKey: "0058f4534e105eb24f3b135703608c66720edf0beb",
-
 });
 
 // Multer storage configuration for file upload
@@ -52,7 +57,7 @@ router.get("/user", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
+//65fbfe7a368ef587cd2508fb
 //auth/users/660cb7f91eaf181546396624
 
 // router.post(
@@ -92,7 +97,6 @@ router.post(
   async (req, res) => {
     try {
       const {
-        //subscriberId,
         title,
         durationInDays,
         price,
@@ -101,9 +105,7 @@ router.post(
         description,
       } = req.params;
 
-      const firstName = req.user.firstName;
-      const lastName = req.user.lastName;
-      const subscriberId = req.user?._id
+      const subscriberId = req.user?._id;
 
       if (!req.file || !req.file.buffer) {
         return res.status(400).json({ error: "No file uploaded" });
@@ -125,8 +127,6 @@ router.post(
         fileName: fileName,
         data: fileBuffer,
         title: title,
-
-        //  description: description
       });
       const bucketName = "trader-signal-app-v1"; // Name of the bucket
       const uploadedFileName = uploadResponse.data.fileName;
@@ -142,15 +142,16 @@ router.post(
         title,
         description,
         status: status || "pending",
-        firstName,
-        lastName,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
       };
 
-      // Check if the status is pending, rejected, or accepted
+      // Check if the status is pending, rejected, accepted, or expired
       if (
         newStatusData.status !== "pending" &&
         newStatusData.status !== "rejected" &&
-        newStatusData.status !== "accepted"
+        newStatusData.status !== "accepted" &&
+        newStatusData.status !== "expired"
       ) {
         return res.status(400).json({ error: "Invalid status" });
       }
@@ -158,6 +159,7 @@ router.post(
       // If status is accepted, trigger further action
       if (newStatusData.status === "accepted") {
         console.log("Status is accepted, trigger further action...");
+        // Your further action here...
       }
 
       // Create a new status entry
@@ -166,6 +168,47 @@ router.post(
       // Save the new status entry
       await newStatus.save();
 
+      // Check if durationInDays is a number and greater than a certain value
+      const duration = parseInt(durationInDays);
+      if (!isNaN(duration) && duration >= YOUR_THRESHOLD_VALUE) {
+        // Trigger action when durationInDays reaches a certain value
+        try {
+          const subscription = await Subscription.findById(subscriptionId);
+          if (!subscription) {
+            return res.status(404).json({ error: "Subscription not found" });
+          }
+
+          const userSubscriptionIndex = subscription.users.findIndex(
+            (subscriber) => subscriber.user.toString() === subscriberId
+          );
+          if (userSubscriptionIndex === -1) {
+            return res
+              .status(404)
+              .json({ error: "User is not subscribed to this subscription" });
+          }
+
+          // Remove user from subscription
+          subscription.users.splice(userSubscriptionIndex, 1);
+          await subscription.save();
+
+          // Update isExpired for associated status
+          const status = await Status.findOne({ _id: statusId });
+          if (status) {
+            status.isExpired = true; // Update isExpired field
+            status.status = "expired"; // Set status to expired
+            await status.save();
+          }
+
+          await sendSubscriptionRequestConfirmation(req.user);
+          res
+            .status(200)
+            .json({ message: "User left the subscription successfully" });
+        } catch (error) {
+          console.error("Error removing user from subscription:", error);
+          res.status(500).json({ error: "Internal Server Error" });
+        }
+      }
+// http://localhost:3002/api/v1/posts/create/66129a5f76c8a7bfe168f571
       res
         .status(201)
         .json({ message: "Status created successfully", status: newStatus });
@@ -176,10 +219,16 @@ router.post(
   }
 );
 
-router.put("/:statusId", async (req, res) => {
+router.put("/:userId/:statusId", async (req, res) => {
   try {
     const { status } = req.body;
-    const { statusId } = req.params;
+    const { userId, statusId } = req.params;
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     // Find the status by ID
     const existingStatus = await Status.findById(statusId);
@@ -187,98 +236,67 @@ router.put("/:statusId", async (req, res) => {
       return res.status(404).json({ error: "Status not found" });
     }
 
-    console.log(existingStatus, " existingStatus");
     // Update the status
     existingStatus.status = status;
 
     // Save the updated status
     await existingStatus.save();
 
-    // If status is rejected, return a rejection message
-    if (status === "rejected") {
-      return res
-        .status(200)
-        .json({ message: "User is rejected from this subscription" });
-    }
+    // Send notification email based on status
+    await sendSubscriptionStatusNotification(
+      user,
+      status,
+      existingStatus.durationInDays
+    );
 
-    // If status is accepted, continue with subscription process
-    if (existingStatus && status === "accepted") {
-      // Fetch all the details of the status
-      const updatedStatus = await Status.findById(statusId);
-
-      const subscription = await Subscription.findById(
-        existingStatus?.subscriptionId
-      );
-
-      const subscriptionPrice = subscription.price;
-
-      // Calculate the amount to be paid (you may add padding or other calculations here)
-      const amountPaid = subscriptionPrice; // For now, just use the subscription price
-      if (isNaN(amountPaid) || amountPaid <= 0) {
-        return res
-          .status(400)
-          .json({ error: "Amount paid must be a positive number" });
-      }
-
-      // Find the user by ID
-      const user = await User.findById(existingStatus?.subscriberId);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-
-      const { firstName, profilePhoto, lastName } = user;
-
-      const isSubscribed = subscription.users.some(
-        (subscriber) =>
-          subscriber.user.toString() === existingStatus.subscriberId
-      );
-      if (isSubscribed) {
-        return res
-          .status(400)
-          .json({ error: "User is already subscribed to this subscription" });
-      }
-      console.log(isSubscribed, "subscriptionId");
-      // Calculate subscription expiration date based on current date and duration in days
+    // If status is accepted, schedule expiration and reminder emails
+    if (status === "accepted") {
       const expirationDate = new Date();
       expirationDate.setDate(
-        expirationDate.getDate() + subscription.durationInDays
+        expirationDate.getDate() + existingStatus.durationInDays
       );
 
-      // Create a new subscription entry for the user
-      const newSubscriptionEntry = {
-        user: userId,
-        firstName: firstName,
-        lastName: lastName,
-        profilePhoto: profilePhoto,
-        subscriptionDate: new Date(),
-        expirationDate: expirationDate,
-        isRenew: null,
-        amountPaid: existingStatus?.price,
-        durationPaidFor: existingStatus?.durationInDays,
-        subscriptionId: existingStatus.subscriptionId,
-      };
+      // Schedule expiration email
+      sendSubscriptionStatusNotification(
+        user,
+        "Your subscription has expired.",
+        expirationDate
+      );
 
-      try {
-        subscription.users.push(newSubscriptionEntry);
-        await subscription.save();
-        console.log("Subscription saved successfully");
-      } catch (error) {
-        console.error("Error saving subscription:", error);
-        // Handle the error appropriately (e.g., return an error response to the client)
-      }
+      // Schedule reminder emails
+      const fiveDaysBeforeExpiration = new Date(expirationDate);
+      fiveDaysBeforeExpiration.setDate(fiveDaysBeforeExpiration.getDate() - 5);
+      sendSubscriptionStatusNotification(
+        user,
+        "Your subscription is expiring in 5 days. Please renew to continue accessing our services.",
+        fiveDaysBeforeExpiration
+      );
 
-      if (!subscription) {
-        return res.status(404).json({ error: "Subscription not found" });
-      }
+      const threeDaysBeforeExpiration = new Date(expirationDate);
+      threeDaysBeforeExpiration.setDate(
+        threeDaysBeforeExpiration.getDate() - 3
+      );
+      sendSubscriptionStatusNotification(
+        user,
+        "Your subscription is expiring in 3 days. Please renew to continue accessing our services.",
+        threeDaysBeforeExpiration
+      );
+
+      const oneDayBeforeExpiration = new Date(expirationDate);
+      oneDayBeforeExpiration.setDate(oneDayBeforeExpiration.getDate() - 1);
+      sendSubscriptionStatusNotification(
+        user,
+        "Your subscription is expiring tomorrow. Please renew to continue accessing our services.",
+        oneDayBeforeExpiration
+      );
+      setTimeout(async () => {
+        existingStatus.isExpired = true;
+        existingStatus.status = "expired";
+        await existingStatus.save();
+      }, existingStatus.durationInDays * 24 * 60 * 60 * 1000);
     }
 
-    res
-      .status(202)
-      .json({ message: "User joined the subscription successfully" });
-
-    res
-      .status(200)
-      .json({ message: "Status updated successfully", status: updatedStatus });
+    res.status(202).json({ message: "Status updated successfully" });
   } catch (error) {
     console.error("Error updating status:", error);
     res.status(500).json({ error: "Internal Server Error" });

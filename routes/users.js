@@ -1,11 +1,9 @@
-
-
-
-
-
 const express = require("express");
 const router = express.Router();
 const User = require("../models/Users");
+const {
+  sendPostJoinCommunityNotification,
+} = require("../services/mailing/joinedCommunity");
 //Route to get all users
 router.get("/", async (req, res) => {
   try {
@@ -24,20 +22,39 @@ router.get("/profile", (req, res) => {
   res.json({ user });
 });
 
-router.get('/providers', async (req, res) => {
+router.get("/providers", async (req, res) => {
   try {
-    // Query the User collection for users with provider set to true
-    const providers = await User.find({ provider: true });
+    // Query the User collection for users where provider and verified are both true
+    const providers = await User.find({ provider: true, verified: true });
 
     // Return the fetched users as a response
     res.status(200).json(providers);
   } catch (error) {
     // Handle errors
-    console.error('Error fetching providers:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Error fetching providers:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
+router.put("/toggle-community/:userId", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.communitySubscribed = true;
+    await user.save();
+    setTimeout(async () => {
+      user.communitySubscribed = false;
+      await user.save();
+    }, 29 * 24 * 60 * 60 * 1000);
+    await sendPostJoinCommunityNotification(user);
+    res.json({ message: "User community status toggled to true" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 
 router.get("/:id", async (req, res) => {
   const { id } = req.params;

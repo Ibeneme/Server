@@ -3,6 +3,7 @@ const Subscription = require("../../models/Providers/Subscription");
 const User = require("../../models/Users");
 const Post = require("../../models/Providers/Post");
 const Logs = require("../../models/Providers/Logs");
+const Status = require("../../models/Providers/Status");
 const router = express.Router();
 
 router.post('/:subscriptionId/:userId/withdrawals', async (req, res) => {
@@ -381,10 +382,11 @@ router.get("/user/:userId/subscriptions", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-router.delete("/leave/:subscriptionId/:userId", async (req, res) => {
+router.delete("/leave/:subscriptionId/:userId/:statusId/", async (req, res) => {
   try {
     const subscriptionId = req.params.subscriptionId;
     const userId = req.params.userId;
+    const statusId = req.params.statusId;
 
     const subscription = await Subscription.findById(subscriptionId);
     if (!subscription) {
@@ -399,12 +401,20 @@ router.delete("/leave/:subscriptionId/:userId", async (req, res) => {
         .status(404)
         .json({ error: "User is not subscribed to this subscription" });
     }
+    
+    // Remove user from subscription
     subscription.users.splice(userSubscriptionIndex, 1);
     await subscription.save();
 
-    res
-      .status(200)
-      .json({ message: "User left the subscription successfully" });
+    // Update isExpired for associated status
+    const status = await Status.findOne({statusId});
+    console.log(status,'statusstatus')
+    if (status) {
+      status.isExpired = true; // Update isExpired field
+      await status.save();
+    }
+
+    res.status(200).json({ message: "User left the subscription successfully" });
   } catch (error) {
     console.error("Error removing user from subscription:", error);
     res.status(500).json({ error: "Internal Server Error" });
