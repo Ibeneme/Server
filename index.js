@@ -43,6 +43,8 @@ const waitingList = require('./routes/waitingList/waitingList.js')
 const initializeChatRouter = require("./routes/chats/chatRouter.js");
 const User = require("./models/Users.js");
 const CommunityChat = require("./models/CommunityChat.js");
+//const com 
+
 require("dotenv").config();
 
 const chatRouter = initializeChatRouter(server);
@@ -212,6 +214,7 @@ app.use("/api/v1/withdraws/", authMiddleware, withdraws);
 app.use("/api/v1/rating/", authMiddleware, rating);
 app.use("/api/v1/allCommunityChats/", allCommunityChats);
 app.use("/api/v1/waiting-list", waitingList);
+app.use("/api/v1/", authMiddleware, com);
 
 app.disable("x-powered-by");
 
