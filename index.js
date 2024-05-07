@@ -214,7 +214,7 @@ app.use("/api/v1/withdraws/", authMiddleware, withdraws);
 app.use("/api/v1/rating/", authMiddleware, rating);
 app.use("/api/v1/allCommunityChats/", allCommunityChats);
 app.use("/api/v1/waiting-list", waitingList);
-app.use("/api/v1/", authMiddleware, com);
+//app.use("/api/v1/", authMiddleware, com);
 
 app.disable("x-powered-by");
 
