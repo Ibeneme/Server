@@ -21,7 +21,7 @@ router.get('/withdrawals', async (req, res) => {
     }));
 
     // Find items with status "accepted" for the authenticated user
-    const items = await Status.find({ subscriberId: userId, status: 'accepted' }).sort({ createdAt: -1 });
+    const items = await Status.find({ creator: userId, status: 'accepted' }).sort({ createdAt: -1 });
     const totalAcceptedAmount = items.reduce((total, item) => total + item.price, 0);
 
     // Calculate the balance as the difference between total accepted amount and total approved amount

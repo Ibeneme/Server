@@ -43,7 +43,8 @@ const waitingList = require('./routes/waitingList/waitingList.js')
 const initializeChatRouter = require("./routes/chats/chatRouter.js");
 const User = require("./models/Users.js");
 const CommunityChat = require("./models/CommunityChat.js");
-//const com 
+const commsub = require("./routes/subscriptions/comStatus")
+const YOUR_THRESHOLD_VALUE = 30; // Define your threshold value here
 
 require("dotenv").config();
 
@@ -214,6 +215,8 @@ app.use("/api/v1/withdraws/", authMiddleware, withdraws);
 app.use("/api/v1/rating/", authMiddleware, rating);
 app.use("/api/v1/allCommunityChats/", allCommunityChats);
 app.use("/api/v1/waiting-list", waitingList);
+app.use("/api/v1/communitysub", authMiddleware,commsub);
+
 //app.use("/api/v1/", authMiddleware, com);
 
 app.disable("x-powered-by");

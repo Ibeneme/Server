@@ -38,6 +38,7 @@ router.post('/:subscriptionId/:userId/withdrawals', async (req, res) => {
     // Save the updated subscription
     await subscription.save();
 
+    
     res.status(201).json({ message: 'Withdrawal added successfully', withdrawal: newWithdrawal });
   } catch (error) {
     console.error('Error adding withdrawal:', error);
@@ -101,8 +102,20 @@ router.get("/:subscriptionId", async (req, res) => {
 
 router.get('/users/subscribed', async (req, res) => {
   try {
-    // Aggregate all users subscribed to all subscriptions
+    // Assuming you have authenticated the user and stored user information in req.user
+    const userId = req.user.id; // Assuming user id is stored in req.user
+
+    // Find the subscription(s) where the creator is the current user
+    const subscriptions = await Subscription.find({ creator: userId });
+
+    if (!subscriptions || subscriptions.length === 0) {
+      // If the user is not the creator of any subscription, return 403 Forbidden
+      return res.status(403).json({ error: "You are not authorized to access this resource." });
+    }
+
+    // If the user is the creator of at least one subscription, proceed with aggregation
     const result = await Subscription.aggregate([
+      { $match: { creator: userId } }, // Only match subscriptions created by the user
       { $unwind: "$users" },
       { $group: {
           _id: "$users.user",
@@ -119,6 +132,7 @@ router.get('/users/subscribed', async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
 
 router.get('/users/subscribe', async (req, res) => {
   try {

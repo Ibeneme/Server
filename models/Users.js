@@ -7,7 +7,10 @@ const UserSchema = new mongoose.Schema(
       maxlength: 30,
       // unique: true,
     },
+    communitySubWaiting: { type: Boolean, default: false },
+    communitySub: { type: Boolean, default: false },
     deleted: { type: Boolean, default: false },
+    communitySubscribed: { type: Boolean, default: false },
     firstName: { type: String, require: true, minlength: 3, maxlength: 30 },
     lastName: { type: String, require: true, minlength: 3, maxlength: 30 },
     email: {

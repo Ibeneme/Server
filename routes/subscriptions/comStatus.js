@@ -1,6 +1,4 @@
 const express = require("express");
-const Status = require("../../models/Providers/Status");
-const Subscription = require("../../models/Providers/Subscription");
 const User = require("../../models/Users");
 const router = express.Router();
 const B2 = require("backblaze-b2");
@@ -11,6 +9,7 @@ const {
 const {
   sendSubscriptionStatusNotification,
 } = require("../../services/mailing/subNotifications");
+const ComStatus = require("../../models/Providers/ComStatus");
 const YOUR_THRESHOLD_VALUE = 30; // Define your threshold value here
 
 // Backblaze B2 credentials
@@ -27,7 +26,7 @@ const upload = multer({ storage: storage });
 
 router.get("/", async (req, res) => {
   try {
-    const statuses = await Status.find().sort({ createdAt: -1 }); // Sort by createdAt timestamp in descending order
+    const statuses = await ComStatus.find().sort({ createdAt: -1 }); // Sort by createdAt timestamp in descending order
     res.status(200).json({ statuses });
   } catch (error) {
     console.error("Error fetching statuses:", error);
@@ -42,7 +41,7 @@ router.get("/user", async (req, res) => {
 
     console.log(userId, "userId");
     // Find user statuses based on subscriberId and sort by createdAt timestamp in descending order
-    const userStatuses = await Status.find({ subscriberId: userId }).sort({
+    const userStatuses = await ComStatus.find({ subscriberId: userId }).sort({
       createdAt: -1,
     });
 
@@ -62,11 +61,11 @@ router.get("/user", async (req, res) => {
 //auth/users/660cb7f91eaf181546396624
 
 // router.post(
-//   "/:subscriberId/:durationInDays/:price/:subscriptionId/:status",
+//   "/:subscriberId/:durationInDays/:price/:status",
 //   upload.single("image"),
 //   async (req, res) => {
 //     try {
-//       const { subscriberId, durationInDays, price, subscriptionId, status } =
+//       const { subscriberId, durationInDays, price, status } =
 //         req.params;
 
 //       // Check if the file is uploaded
@@ -93,20 +92,14 @@ router.get("/user", async (req, res) => {
 
 //http://localhost:3002/api/v1/status/65fbfe7a368ef587cd2508fb/30/50/660012cd4ea553b2c0043636/pending
 router.post(
-  "/:subscriberId/:durationInDays/:price/:subscriptionId/:status/:title/:description/:creator",
+  "/:subscriberId/:status/",
   upload.single("image"),
   async (req, res) => {
     try {
-      const {
-        title,
-        durationInDays,
-        price,
-        subscriptionId,
-        status,
-        description,
-        creator,
-      } = req.params;
+      const { status } = req.params;
 
+      const durationInDays = 30;
+      const price = 1;
       const subscriberId = req.user?._id;
 
       if (!req.file || !req.file.buffer) {
@@ -128,7 +121,6 @@ router.post(
         uploadAuthToken: response.data.authorizationToken,
         fileName: fileName,
         data: fileBuffer,
-        title: title,
       });
       const bucketName = "trader-signal-app-v1"; // Name of the bucket
       const uploadedFileName = uploadResponse.data.fileName;
@@ -139,11 +131,7 @@ router.post(
         durationInDays,
         price,
         imageProof: avatarUrl,
-        subscriptionId,
         subscriberId,
-        creator,
-        title,
-        description,
         status: status || "pending",
         firstName: req.user.firstName,
         lastName: req.user.lastName,
@@ -166,52 +154,36 @@ router.post(
       }
 
       // Create a new status entry
-      const newStatus = new Status(newStatusData);
+      const newStatus = new ComStatus(newStatusData);
 
       // Save the new status entry
       await newStatus.save();
 
+      // Find the user associated with the subscription request
+      const user = await User.findById(subscriberId);
+
+      // Update the user's communitySubWaiting field to true
+      user.communitySubWaiting = true;
+
+      // If the subscription status is 'accepted', update communitySub field to true
+      if (status === "accepted") {
+        user.communitySub = true;
+
+        // Schedule timeout to reset communitySub to false after 30 days
+        setTimeout(async () => {
+          user.communitySub = false;
+          user.communitySubWaiting = false;
+          await user.save();
+        }, 30 * 24 * 60 * 60 * 1000); // 30 days in milliseconds
+      }
+
+      // Save the updated user
+      await user.save();
+
       // Check if durationInDays is a number and greater than a certain value
       const duration = parseInt(durationInDays);
-      if (!isNaN(duration) && duration >= YOUR_THRESHOLD_VALUE) {
-        // Trigger action when durationInDays reaches a certain value
-        try {
-          const subscription = await Subscription.findById(subscriptionId);
-          if (!subscription) {
-            return res.status(404).json({ error: "Subscription not found" });
-          }
 
-          const userSubscriptionIndex = subscription.users.findIndex(
-            (subscriber) => subscriber.user.toString() === subscriberId
-          );
-          if (userSubscriptionIndex === -1) {
-            return res
-              .status(404)
-              .json({ error: "User is not subscribed to this subscription" });
-          }
-
-          // Remove user from subscription
-          subscription.users.splice(userSubscriptionIndex, 1);
-          await subscription.save();
-
-          // Update isExpired for associated status
-          const status = await Status.findOne({ _id: statusId });
-          if (status) {
-            status.isExpired = true; // Update isExpired field
-            status.status = "expired"; // Set status to expired
-            await status.save();
-          }
-
-          await sendSubscriptionRequestConfirmation(req.user);
-          res
-            .status(200)
-            .json({ message: "User left the subscription successfully" });
-        } catch (error) {
-          console.error("Error removing user from subscription:", error);
-          res.status(500).json({ error: "Internal Server Error" });
-        }
-      }
-// http://localhost:3002/api/v1/posts/create/66129a5f76c8a7bfe168f571
+      // http://localhost:3002/api/v1/posts/create/66129a5f76c8a7bfe168f571
       res
         .status(201)
         .json({ message: "Status created successfully", status: newStatus });
@@ -234,30 +206,37 @@ router.put("/:userId/:statusId", async (req, res) => {
     }
 
     // Find the status by ID
-    const existingStatus = await Status.findById(statusId);
+    const existingStatus = await ComStatus.findById(statusId);
     if (!existingStatus) {
       return res.status(404).json({ error: "Status not found" });
+    }
+
+     // If the subscription status is 'accepted', update communitySub field to true
+     if (status === "accepted") {
+      user.communitySub = true;
+
+      // Schedule timeout to reset communitySub to false after 30 days
+      setTimeout(async () => {
+        user.communitySub = false;
+        user.communitySubWaiting = false;
+        await user.save();
+      }, 10000000 ); // 30 days in milliseconds
     }
 
     // Update the status
     existingStatus.status = status;
 
+    const durationInDays = 30 * 24 * 60 * 60 * 1000;
     // Save the updated status
     await existingStatus.save();
 
     // Send notification email based on status
-    await sendSubscriptionStatusNotification(
-      user,
-      status,
-      existingStatus.durationInDays
-    );
+    await sendSubscriptionStatusNotification(user, status, durationInDays);
 
     // If status is accepted, schedule expiration and reminder emails
     if (status === "accepted") {
       const expirationDate = new Date();
-      expirationDate.setDate(
-        expirationDate.getDate() + existingStatus.durationInDays
-      );
+      expirationDate.setDate(expirationDate.getDate() + durationInDays);
 
       // Schedule expiration email
       sendSubscriptionStatusNotification(
@@ -292,11 +271,21 @@ router.put("/:userId/:statusId", async (req, res) => {
         "Your subscription is expiring tomorrow. Please renew to continue accessing our services.",
         oneDayBeforeExpiration
       );
-      setTimeout(async () => {
-        existingStatus.isExpired = true;
-        existingStatus.status = "expired";
-        await existingStatus.save();
-      }, existingStatus.durationInDays * 24 * 60 * 60 * 1000);
+      if (status === "accepted") {
+        user.communitySub = true;
+        await user.save();
+      }
+
+      // setTimeout(async () => {
+      //   existingStatus.isExpired = true;
+      //   existingStatus.status = "expired";
+      //   await existingStatus.save();
+      // }, 30 * 24 * 60 * 60 * 1000);
+      // Set timeout to reset communitySub to false after 30 days
+      // setTimeout(async () => {
+      //   user.communitySub = false;
+      //   await user.save();
+      // }, 30 * 24 * 60 * 60 * 1000); // 30 days in milliseconds
     }
 
     res.status(202).json({ message: "Status updated successfully" });

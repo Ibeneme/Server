@@ -25,6 +25,10 @@ const communitySchema = new mongoose.Schema({
         type: Boolean,
         required: true,
       },
+      isSubscribed: {
+        type: Boolean,
+        required: true,
+      },
       dateJoined: {
         type: Date,
         default: Date.now,
