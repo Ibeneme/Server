@@ -78,7 +78,7 @@ const sendPostJoinCommunityNotification = async (user, post) => {
     </html> `;
 
     const mailOptions = {
-      from: '"Ibeneme Ikenna" <ikennaibenemee@gmail.com>',
+      from: '"OTI Signals" <ikennaibenemee@gmail.com>',
       to: user.email, // Recipient
       subject: "Community Joining Confirmation", // Subject line
       html: emailContent, // HTML body
@@ -172,7 +172,7 @@ const scheduleEmail = async (user, message, date) => {
     </html> `;
 
     const mailOptions = {
-      from: '"Ibeneme Ikenna" <ikennaibenemee@gmail.com>',
+      from: '"OTI Signals" <ikennaibenemee@gmail.com>',
       to: user.email, // Recipient
       subject: "Subscription Reminder", // Subject line
       html: emailContent, // HTML body

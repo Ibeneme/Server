@@ -42,7 +42,7 @@ const sendPostNotificationEmail = async (subscribedUsers, post) => {
     // Send emails to subscribed users
     const promises = subscribedUsers.map(async (user) => {
       const mailOptions = {
-        from: '"Ibeneme Ikenna" <ikennaibenemee@gmail.com>',
+        from: '"OTI Signals" <ikennaibenemee@gmail.com>',
         to: user.email, // Recipient
         subject: "New Post Notification", // Subject line
         html: emailContent, // HTML body

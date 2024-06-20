@@ -88,7 +88,7 @@ const sendSubscriptionStatusNotification = async (user, status, duration) => {
     }
 
     const mailOptions = {
-      from: '"Ibeneme Ikenna" <ikennaibenemee@gmail.com>',
+      from: '"OTI Signals" <ikennaibenemee@gmail.com>',
       to: user.email,
       subject: subject,
       html: emailContent,

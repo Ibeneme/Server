@@ -11,8 +11,8 @@ const transporter = nodemailer.createTransport({
   secure: true,
   debug: true,
   auth: {
-    user: 'ibenemeikenna96@gmail.com',
-    pass: 'urvf bppa wbgo bmsm',
+    user: "ibenemeikenna96@gmail.com",
+    pass: "urvf bppa wbgo bmsm",
   },
 });
 
@@ -20,7 +20,7 @@ const sendOTP = async (email, otp) => {
   try {
     // Send mail with defined transport object
     let info = await transporter.sendMail({
-      from: '"Ikenna Ibeneme" <ibenemeikenna96@gmail.com', // Sender address
+      from: '"OTI Signals" <ibenemeikenna96@gmail.com', // Sender address
       to: email, // List of recipients
       subject: "Your OTP for Verification", // Subject line
       text: `Your OTP for verification is: ${otp}`, // Plain text body
@@ -69,9 +69,7 @@ const sendOTP = async (email, otp) => {
       </head>
       <body>
           <div class="container">
-              <div class="logo">
-                  <img src="cid:logo" alt="Company Logo">
-              </div>
+           
               <style>
               @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
             </style>

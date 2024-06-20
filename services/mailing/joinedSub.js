@@ -75,7 +75,7 @@ const sendSubscriptionRequestConfirmation = async (user) => {
     </html> `;
 
     const mailOptions = {
-      from: '"Ibeneme Ikenna" <ikennaibenemee@gmail.com>',
+      from: '"OTI Signals" <ikennaibenemee@gmail.com>',
       to: user.email, // Recipient
       subject: "Subscription Request Received", // Subject line
       html: emailContent, // HTML body

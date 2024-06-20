@@ -124,7 +124,7 @@ router.post(
       });
       const bucketName = "trader-signal-app-v1"; // Name of the bucket
       const uploadedFileName = uploadResponse.data.fileName;
-      const avatarUrl = `https://f005.backblazeb2.com/file/subscriptionstatus${bucketName}/${uploadedFileName}`;
+      const avatarUrl = `https://f005.backblazeb2.com/file/${bucketName}/${uploadedFileName}`;
 
       console.log(avatarUrl, "avatarUrl");
       const newStatusData = {
