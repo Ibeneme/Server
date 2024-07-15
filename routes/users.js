@@ -225,4 +225,41 @@ router.delete("/users/delete-all", async (req, res) => {
   }
 });
 
+router.delete("/web", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Check if email and password are provided
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+
+    // Find the user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Compare provided password with hashed password
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ error: "Email or password is incorrect" });
+    }
+
+    // Delete the user from the database
+    const deletedUser = await User.findByIdAndDelete(user._id);
+
+    if (!deletedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json({ message: "Account deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting account:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 module.exports = router;
