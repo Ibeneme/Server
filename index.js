@@ -45,6 +45,7 @@ const User = require("./models/Users.js");
 const CommunityChat = require("./models/CommunityChat.js");
 const commsub = require("./routes/subscriptions/comStatus");
 const YOUR_THRESHOLD_VALUE = 30; // Define your threshold value here
+const course = require("./routes/courses/courses.js");
 
 require("dotenv").config();
 
@@ -216,7 +217,7 @@ app.use("/api/v1/rating/", authMiddleware, rating);
 app.use("/api/v1/allCommunityChats/", allCommunityChats);
 app.use("/api/v1/waiting-list", waitingList);
 app.use("/api/v1/communitysub", authMiddleware, commsub);
-
+app.use("/api/v1/courses", course);
 //app.use("/api/v1/", authMiddleware, com);
 
 app.disable("x-powered-by");

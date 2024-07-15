@@ -79,13 +79,7 @@ const sendSubscriptionRequestConfirmation = async (user) => {
       to: user.email, // Recipient
       subject: "Subscription Request Received", // Subject line
       html: emailContent, // HTML body
-      attachments: [
-        {
-          filename: "logo.png",
-          path: logoPath,
-          cid: "logo", // Content ID of the image
-        },
-      ],
+  
     };
 
     await transporter.sendMail(mailOptions);

@@ -8,7 +8,15 @@ const WalletSchema = new mongoose.Schema({
   },
   totalBalance: {
     type: Number,
-    required: true,
+    //required: true,
+  },
+  totalEarnings: {
+    type: Number,
+    //required: true,
+  },
+  totalWithdrawn: {
+    type: Number,
+    //required: true,
   },
   _id: mongoose.Schema.Types.ObjectId,
 });

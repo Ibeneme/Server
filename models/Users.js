@@ -1,18 +1,17 @@
 const mongoose = require("mongoose");
+
 const UserSchema = new mongoose.Schema(
   {
     username: {
       type: String,
       minlength: 3,
       maxlength: 30,
-      // unique: true,
     },
     communitySubWaiting: { type: Boolean, default: false },
     communitySub: { type: Boolean, default: false },
     deleted: { type: Boolean, default: false },
-    communitySubscribed: { type: Boolean, default: false },
-    firstName: { type: String, require: true, minlength: 3, maxlength: 30 },
-    lastName: { type: String, require: true, minlength: 3, maxlength: 30 },
+    firstName: { type: String, required: true, minlength: 3, maxlength: 30 },
+    lastName: { type: String, required: true, minlength: 3, maxlength: 30 },
     email: {
       type: String,
       minlength: 3,
@@ -21,14 +20,12 @@ const UserSchema = new mongoose.Schema(
     },
     phoneNumber: {
       type: String,
-      require: true,
       minlength: 3,
       maxlength: 200,
-      unique: true,
     },
     password: {
       type: String,
-      require: true,
+      required: true,
       minlength: 3,
       maxlength: 1024,
     },
@@ -55,8 +52,7 @@ const UserSchema = new mongoose.Schema(
     communitySubscribed: { type: Boolean, default: false },
     averagePrice: { type: Number, default: 0 },
     provider: { type: Boolean, default: false },
-    profilePhoto: { type: String },
-    posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }], // References to posts made by the user
+    posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
     kyc: {
       contentType: { type: String, default: null },
     },
@@ -79,6 +75,41 @@ const UserSchema = new mongoose.Schema(
       { type: mongoose.Schema.Types.ObjectId, ref: "Subscription" },
     ],
     niche: { type: String, default: null },
+    totalBalance: {
+      type: Number,
+      default: 0,
+    },
+    totalEarnings: {
+      type: Number,
+      default: 0,
+    },
+    totalWithdrawn: {
+      type: Number,
+      default: 0,
+    },
+    withdrawnFunds: [
+      {
+        amount: { type: Number, required: true },
+        recipientAddress: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+        status: { type: String },
+      },
+    ],
+    earnings: [
+      {
+        amountEarned: { type: Number, required: true },
+        subscriptionId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Subscription",
+        },
+        subscriptionTitle: { type: String },
+        durationIndays: { type: String },
+        subscriberFirstName: { type: String },
+        subscriberLastName: { type: String },
+        timestamp: { type: Date, default: Date.now },
+        status: { type: String },
+      },
+    ],
   },
   {
     timestamps: true,
