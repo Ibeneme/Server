@@ -47,6 +47,8 @@ const commsub = require("./routes/subscriptions/comStatus");
 const YOUR_THRESHOLD_VALUE = 30; // Define your threshold value here
 const course = require("./routes/courses/courses.js");
 const walletaddress = require("./routes/wallets/walletAddress.js");
+const admin = require("./routes/admin/Admin.js");
+const adminAuth = require('./routes/admin/auth/Auth.js')
 
 require("dotenv").config();
 
@@ -62,6 +64,8 @@ const io = new Server(server, {
     origin: "*",
   },
 });
+
+//c19f62
 
 const communityIo = new Server(server, {
   cors: {
@@ -220,6 +224,8 @@ app.use("/api/v1/waiting-list", waitingList);
 app.use("/api/v1/communitysub", authMiddleware, commsub);
 app.use("/api/v1/courses", course);
 app.use("/api/v1/wallet-addresses", walletaddress);
+app.use("/api/v1/admin", admin);
+app.use("/api/v1/admin-auth", adminAuth);
 //app.use("/api/v1/", authMiddleware, com);
 
 app.disable("x-powered-by");

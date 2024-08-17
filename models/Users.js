@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema(
       maxlength: 30,
     },
     communitySubWaiting: { type: Boolean, default: false },
+    communitySubFailed: { type: Boolean, default: false },
     communitySub: { type: Boolean, default: false },
     deleted: { type: Boolean, default: false },
     firstName: { type: String, required: true, minlength: 3, maxlength: 30 },
@@ -53,6 +54,7 @@ const UserSchema = new mongoose.Schema(
     communitySubscribed: { type: Boolean, default: false },
     averagePrice: { type: Number, default: 0 },
     provider: { type: Boolean, default: false },
+    providerFailed: { type: Boolean, default: false },
     posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
     kyc: {
       contentType: { type: String, default: null },
