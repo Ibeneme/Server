@@ -137,4 +137,89 @@ router.get("/users-earnings", async (req, res) => {
   }
 });
 
+// Update user to be a provider
+router.put("/users/make-provider", async (req, res) => {
+  try {
+    const user = await User.findById(req.body.id);
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    user.provider = true;
+    await user.save();
+
+    res.json({ msg: "User updated to provider", user });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Update user's communitySubscribed status
+router.put("/users/community-subscribed", async (req, res) => {
+  try {
+    const user = await User.findById(req.body.id);
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    user.communitySubscribed = req.body.communitySubscribed;
+    await user.save();
+
+    res.json({ msg: "User communitySubscribed status updated", user });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Update user's communitySubFailed status
+router.put("/users/community-sub-failed", async (req, res) => {
+  try {
+    const user = await User.findById(req.body.id);
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    user.communitySubFailed = req.body.communitySubFailed;
+    await user.save();
+
+    res.json({ msg: "User communitySubFailed status updated", user });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Update user's providerFailed status
+router.put("/users/provider-failed", async (req, res) => {
+  try {
+    const user = await User.findById(req.body.id);
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    user.providerFailed = req.body.providerFailed;
+    await user.save();
+
+    res.json({ msg: "User providerFailed status updated", user });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Get all users with KYC information
+router.get("/users-with-kyc", async (req, res) => {
+  try {
+    const usersWithKYC = await User.find({
+      "kyc.contentType": { $ne: null },
+    }).select("username kyc -_id");
+    res.json(usersWithKYC);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
 module.exports = router;
