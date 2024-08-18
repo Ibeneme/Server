@@ -1,63 +1,12 @@
 const express = require("express");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const Admin = require("../../models/Admin/Admin");
 const User = require("../../models/Users");
 
 const router = express.Router();
 
-// Register a new admin
-router.post("/register", async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    let admin = await Admin.findOne({ email });
-    if (admin) {
-      return res.status(400).json({ message: "Admin already exists" });
-    }
-
-    admin = new Admin({ email, password });
-    await admin.save();
-
-    const payload = { admin: { id: admin.id } };
-    const token = jwt.sign(payload, "your_jwt_secret", { expiresIn: "1h" });
-
-    res.json({ token });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
-  }
-});
-
-// Login an admin
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const admin = await Admin.findOne({ email });
-    if (!admin) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    const payload = { admin: { id: admin.id } };
-    const token = jwt.sign(payload, "your_jwt_secret", { expiresIn: "1h" });
-
-    res.json({ token });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
-  }
-});
-
 // Get all users
 router.get("/users", async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.find().select("-password"); // Exclude the password field
     res.json(users);
   } catch (err) {
     console.error(err.message);
@@ -68,7 +17,7 @@ router.get("/users", async (req, res) => {
 // Get all users who are providers
 router.get("/providers", async (req, res) => {
   try {
-    const providers = await User.find({ provider: true });
+    const providers = await User.find({ provider: true }).select("-password");
     res.json(providers);
   } catch (err) {
     console.error(err.message);
@@ -81,8 +30,107 @@ router.get("/community-subscribed", async (req, res) => {
   try {
     const communitySubscribedUsers = await User.find({
       communitySubscribed: true,
-    });
+    }).select("-password");
     res.json(communitySubscribedUsers);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Get all users who have communitySubFailed
+router.get("/community-sub-failed", async (req, res) => {
+  try {
+    const communitySubFailedUsers = await User.find({
+      communitySubFailed: true,
+    }).select("-password");
+    res.json(communitySubFailedUsers);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Get all users who have communitySubWaiting
+router.get("/community-sub-waiting", async (req, res) => {
+  try {
+    const communitySubWaitingUsers = await User.find({
+      communitySubWaiting: true,
+    }).select("-password");
+    res.json(communitySubWaitingUsers);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Get all users who are verified
+router.get("/verified", async (req, res) => {
+  try {
+    const verifiedUsers = await User.find({
+      verified: true,
+    }).select("-password");
+    res.json(verifiedUsers);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Get earnings and withdrawn funds for each user
+router.get("/users-financials", async (req, res) => {
+  try {
+    const users = await User.find().select("-password").lean(); // Convert Mongoose documents to plain JavaScript objects
+    const userFinancials = users.map((user) => ({
+      ...user,
+      totalAmountEarned: user.earnings.reduce(
+        (sum, earning) => sum + earning.amountEarned,
+        0
+      ),
+      totalAmountWithdrawn: user.withdrawnFunds.reduce(
+        (sum, withdrawal) => sum + withdrawal.amount,
+        0
+      ),
+    }));
+    res.json(userFinancials);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Get only withdrawn funds for each user
+router.get("/users-withdrawn-funds", async (req, res) => {
+  try {
+    const users = await User.find().select("username withdrawnFunds").lean(); // Only select username and withdrawnFunds
+    const userWithdrawnFunds = users.map((user) => ({
+      username: user.username,
+      withdrawnFunds: user.withdrawnFunds,
+      totalWithdrawn: user.withdrawnFunds.reduce(
+        (sum, withdrawal) => sum + withdrawal.amount,
+        0
+      ),
+    }));
+    res.json(userWithdrawnFunds);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Get only earnings (amountEarned) for each user
+router.get("/users-earnings", async (req, res) => {
+  try {
+    const users = await User.find().select("username earnings").lean(); // Only select username and earnings
+    const userEarnings = users.map((user) => ({
+      username: user.username,
+      earnings: user.earnings,
+      totalEarnings: user.earnings.reduce(
+        (sum, earning) => sum + earning.amountEarned,
+        0
+      ),
+    }));
+    res.json(userEarnings);
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
