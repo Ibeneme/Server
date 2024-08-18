@@ -222,4 +222,79 @@ router.get("/users-with-kyc", async (req, res) => {
   }
 });
 
+router.put("/approve-withdrawn-fund", async (req, res) => {
+  try {
+    const { userId, withdrawnFundId, status } = req.body;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    const withdrawnFund = user.withdrawnFunds.id(withdrawnFundId);
+
+    if (!withdrawnFund) {
+      return res.status(404).json({ msg: "Withdrawn fund not found" });
+    }
+
+    withdrawnFund.status = status;
+    await user.save();
+
+    res.json({ msg: "Withdrawn fund status updated", withdrawnFund });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Get all withdrawals
+router.get("/withdrawals", async (req, res) => {
+  try {
+    const withdrawals = await User.find()
+      .select("username withdrawnFunds -_id")
+      .lean();
+
+    const allWithdrawals = withdrawals.flatMap((user) => {
+      return user.withdrawnFunds.map((withdrawal) => ({
+        username: user.username,
+        amount: withdrawal.amount,
+        recipientAddress: withdrawal.recipientAddress,
+        timestamp: withdrawal.timestamp,
+        status: withdrawal.status,
+      }));
+    });
+
+    res.json(allWithdrawals);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Get all earnings
+router.get("/earnings", async (req, res) => {
+  try {
+    const earnings = await User.find().select("username earnings -_id").lean();
+
+    const allEarnings = earnings.flatMap((user) => {
+      return user.earnings.map((earning) => ({
+        username: user.username,
+        amountEarned: earning.amountEarned,
+        subscriptionId: earning.subscriptionId,
+        subscriptionTitle: earning.subscriptionTitle,
+        durationInDays: earning.durationInDays,
+        subscriberFirstName: earning.subscriberFirstName,
+        subscriberLastName: earning.subscriberLastName,
+        timestamp: earning.timestamp,
+        status: earning.status,
+      }));
+    });
+
+    res.json(allEarnings);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
 module.exports = router;
