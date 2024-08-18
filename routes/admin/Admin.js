@@ -1,5 +1,9 @@
 const express = require("express");
 const User = require("../../models/Users");
+const Status = require("../../models/Providers/Status");
+const Course = require("../../models/Providers/Courses");
+const ComStatus = require("../../models/Providers/ComStatus");
+const Subscription = require("../../models/Providers/Subscription");
 
 const router = express.Router();
 
@@ -296,5 +300,141 @@ router.get("/earnings", async (req, res) => {
     res.status(500).send("Server error");
   }
 });
+// Get all statuses
+router.get('/statuses', async (req, res) => {
+  try {
+    const statuses = await Status.find().lean(); // Use .lean() for plain JavaScript objects
+    res.json(statuses);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
 
+
+router.put("/status/:id", async (req, res) => {
+  try {
+    const status = await Status.findById(req.params.id);
+    if (!status) {
+      return res.status(404).json({ msg: "Status not found" });
+    }
+
+    Object.assign(status, req.body);
+    await status.save();
+
+    res.json({ msg: "Status updated", status });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+router.get('/users/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password'); // Exclude the password field
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+router.put("/community-status/:id", async (req, res) => {
+  try {
+    const comStatus = await ComStatus.findById(req.params.id);
+    if (!comStatus) {
+      return res.status(404).json({ msg: "Community status not found" });
+    }
+
+    Object.assign(comStatus, req.body);
+    await comStatus.save();
+
+    res.json({ msg: "Community status updated", comStatus });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+router.get("/subscriptions", async (req, res) => {
+  try {
+    const subscriptions = await Subscription.find().populate("creator").lean();
+    res.json(subscriptions);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+router.get("/subscriptions/:id", async (req, res) => {
+  try {
+    const subscription = await Subscription.findById(req.params.id)
+      .populate("creator")
+      .lean();
+    if (!subscription) {
+      return res.status(404).json({ msg: "Subscription not found" });
+    }
+    res.json(subscription);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+router.get("/courses", async (req, res) => {
+  try {
+    const courses = await Course.find().lean();
+    res.json(courses);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+router.get("/courses/:id", async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id).lean();
+    if (!course) {
+      return res.status(404).json({ msg: "Course not found" });
+    }
+    res.json(course);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+router.put("/courses/:id", async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id);
+    if (!course) {
+      return res.status(404).json({ msg: "Course not found" });
+    }
+
+    Object.assign(course, req.body);
+    await course.save();
+
+    res.json({ msg: "Course updated", course });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+router.delete("/courses/:id", async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id);
+    if (!course) {
+      return res.status(404).json({ msg: "Course not found" });
+    }
+
+    await course.remove();
+    res.json({ msg: "Course removed" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
 module.exports = router;
