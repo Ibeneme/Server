@@ -4,6 +4,7 @@ const Status = require("../../models/Providers/Status");
 const Course = require("../../models/Providers/Courses");
 const ComStatus = require("../../models/Providers/ComStatus");
 const Subscription = require("../../models/Providers/Subscription");
+const logUpdate = require("../../middleware/logging");
 
 const router = express.Router();
 
@@ -301,18 +302,17 @@ router.get("/earnings", async (req, res) => {
   }
 });
 // Get all statuses
-router.get('/statuses', async (req, res) => {
+router.get("/statuses", async (req, res) => {
   try {
     const statuses = await Status.find().lean(); // Use .lean() for plain JavaScript objects
     res.json(statuses);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).send("Server error");
   }
 });
 
-
-router.put("/status/:id", async (req, res) => {
+router.put("/status/:id", logUpdate, async (req, res) => {
   try {
     const status = await Status.findById(req.params.id);
     if (!status) {
@@ -329,21 +329,21 @@ router.put("/status/:id", async (req, res) => {
   }
 });
 
-router.get('/users/:id', async (req, res) => {
+router.get("/users/:id", async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password'); // Exclude the password field
+    const user = await User.findById(req.params.id).select("-password"); // Exclude the password field
     if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
+      return res.status(404).json({ msg: "User not found" });
     }
 
     res.json(user);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).send("Server error");
   }
 });
 
-router.put("/community-status/:id", async (req, res) => {
+router.put("/community-status/:id", logUpdate, async (req, res) => {
   try {
     const comStatus = await ComStatus.findById(req.params.id);
     if (!comStatus) {
@@ -406,7 +406,7 @@ router.get("/courses/:id", async (req, res) => {
     res.status(500).send("Server error");
   }
 });
-router.put("/courses/:id", async (req, res) => {
+router.put("/courses/:id", logUpdate, async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
     if (!course) {
@@ -423,7 +423,7 @@ router.put("/courses/:id", async (req, res) => {
   }
 });
 
-router.delete("/courses/:id", async (req, res) => {
+router.delete("/courses/:id", logUpdate, async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
     if (!course) {
@@ -437,4 +437,46 @@ router.delete("/courses/:id", async (req, res) => {
     res.status(500).send("Server error");
   }
 });
+
+router.get("/logs", async (req, res) => {
+  try {
+    const logs = await Logs.find().sort({ timestamp: -1 }); // Sort logs by most recent
+    res.json(logs);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+
+// Route to get logs by admin email
+router.get("/logs/by-email/:email", async (req, res) => {
+  try {
+    const { email } = req.params;
+    const logs = await Logs.find({ email }).sort({ timestamp: -1 }); // Sort logs by most recent
+    if (logs.length === 0) {
+      return res.status(404).json({ msg: "No logs found for this email" });
+    }
+    res.json(logs);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Route to get logs by admin ID
+router.get("/logs/by-id/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const logs = await Logs.find({ adminId: id }).sort({ timestamp: -1 }); // Sort logs by most recent
+    if (logs.length === 0) {
+      return res.status(404).json({ msg: "No logs found for this ID" });
+    }
+    res.json(logs);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
 module.exports = router;
