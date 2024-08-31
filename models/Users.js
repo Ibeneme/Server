@@ -19,12 +19,12 @@ const UserSchema = new mongoose.Schema(
       maxlength: 200,
       unique: true,
     },
-    phoneNumber: {
-      type: String,
-      minlength: 3,
-      maxlength: 200,
-      default: null,
-    },
+    // phoneNumber: {
+    //   type: String,
+    //   minlength: 3,
+    //   maxlength: 200,
+    //   default: null,
+    // },
     password: {
       type: String,
       required: true,
