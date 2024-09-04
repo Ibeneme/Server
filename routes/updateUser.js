@@ -1,10 +1,8 @@
-
 const express = require("express");
 const User = require("../models/Users");
 const authMiddleware = require("../middleware/auth"); // Import the authMiddleware
 const bcrypt = require("bcrypt");
 const router = express.Router();
-
 
 router.put("/", async (req, res) => {
   const userEmail = req.user.email; // Extracting the user email from the token
@@ -58,34 +56,38 @@ router.put("/", async (req, res) => {
 
 router.put("/:userId", async (req, res) => {
   const userId = req.params.userId;
+  const { firstName, lastName, email, username } = req.body;
 
   try {
-    const updates = req.body;
-    console.log(updates, "updates");
-    if (updates.firstName) {
+    const updates = {};
+
+    // Handle updating firstName
+    if (firstName) {
       updates.firstName =
-        updates.firstName.charAt(0).toUpperCase() +
-        updates.firstName.slice(1).toLowerCase();
+        firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
     }
-    if (updates.lastName) {
+
+    // Handle updating lastName
+    if (lastName) {
       updates.lastName =
-        updates.lastName.charAt(0).toUpperCase() +
-        updates.lastName.slice(1).toLowerCase();
+        lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase();
     }
 
-    // Convert email to lowercase
-    if (updates.email) {
-      updates.email = updates.email.toLowerCase();
+    // Handle updating email
+    if (email) {
+      updates.email = email.toLowerCase();
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      updates,
-      {
-        new: true,
-        maxTimeMS: 20000, // 20 seconds timeout
-      }
-    );
+    // Handle updating username
+    if (username) {
+      updates.username = username;
+    }
+
+    // Update the user document
+    const updatedUser = await User.findByIdAndUpdate(userId, updates, {
+      new: true,
+      maxTimeMS: 20000, // 20 seconds timeout
+    });
 
     if (!updatedUser) {
       return res.status(404).send({ error: "User not found" });
@@ -100,8 +102,6 @@ router.put("/:userId", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
-
 
 // Route to handle password update
 // Route to handle password update
@@ -137,7 +137,5 @@ router.put("/password", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
-
 
 module.exports = router;

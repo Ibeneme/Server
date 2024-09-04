@@ -48,7 +48,7 @@ const YOUR_THRESHOLD_VALUE = 30; // Define your threshold value here
 const course = require("./routes/courses/courses.js");
 const walletaddress = require("./routes/wallets/walletAddress.js");
 const admin = require("./routes/admin/Admin.js");
-const adminAuth = require('./routes/admin/auth/Auth.js')
+const adminAuth = require("./routes/admin/auth/Auth.js");
 
 require("dotenv").config();
 

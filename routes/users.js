@@ -29,9 +29,8 @@ router.get("/providers", async (req, res) => {
     // Query the User collection for users where provider and verified are both true
     const providers = await User.find({
       provider: true,
-      // verified: true
+      verified: true
     });
-
     // Return the fetched users as a response
     res.status(200).json(providers);
   } catch (error) {
