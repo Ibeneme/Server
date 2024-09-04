@@ -20,22 +20,56 @@ router.get("/", async (req, res) => {
 // Route to toggle the following field
 router.post("/toggle-follow/:userId", async (req, res) => {
   try {
-    // Step 2: Find the user by ID
-    const user = await User.findById(req.params.userId);
+    const { userId } = req.params;
+    const followerId = req.user._id;
+    const followerUsername = req.user.username;
 
-    if (!user) {
+    const userToFollow = await User.findById(userId);
+    const follower = await User.findById(followerId);
+
+    if (!userToFollow || !follower) {
       return res.status(404).send("User not found");
     }
 
-    // Step 3: Toggle the following field
-    user.following = !user.following;
+    const isFollowing = userToFollow.followers.includes(followerId);
 
-    // Step 4: Save the updated user document
-    await user.save();
+    if (isFollowing) {
+      // Unfollow
+      userToFollow.followers = userToFollow.followers.filter(
+        (id) => !id.equals(followerId)
+      );
+      userToFollow.followersCount--;
+      await userToFollow.save();
 
-    return res.status(200).json({ following: user.following });
+      follower.following = follower.following.filter(
+        (id) => !id.equals(userId)
+      );
+      await follower.save();
+
+      console.log(
+        `User ${followerUsername} unfollowed ${userToFollow.username}`
+      );
+    } else {
+      // Follow
+      userToFollow.followers.push(followerId);
+      userToFollow.followersCount++;
+      await userToFollow.save();
+
+      follower.following.push(userId);
+      await follower.save();
+
+      console.log(`User ${followerUsername} followed ${userToFollow.username}`);
+    }
+
+    res
+      .status(200)
+      .json({
+        following: !isFollowing,
+        followersCount: userToFollow.followersCount,
+      });
   } catch (error) {
-    return res.status(500).send("Server error");
+    console.error("Error toggling follow:", error);
+    res.status(500).send("Server error");
   }
 });
 

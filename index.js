@@ -235,15 +235,91 @@ const uri =
 app.get("/", (req, res) => {
   res.send("Hello, World people todayyyy!");
 });
-server.listen(port, () => {
-  console.log(`Server is up and running on port ${port}`);
-});
+
+// const updateUsers = async () => {
+//   try {
+//     if (!User || typeof User.find !== "function") {
+//       throw new Error("User model is not properly defined or imported.");
+//     }
+
+//     // Fetch all users
+//     const users = await User.find({});
+
+//     // Create an array of update promises
+//     const updatePromises = users.map((user) => {
+//       return User.updateOne(
+//         { _id: user._id },
+//         {
+//           $set: {
+//             isActive: true,
+//             lastUpdated: new Date(),
+//             newField: "defaultValue",
+//             followersCount: user.followers.length,
+//             followers: [...user.followers, "defaultFollowerId"],
+//           },
+//         }
+//       );
+//     });
+
+//     // Wait for all update operations to complete
+//     await Promise.all(updatePromises);
+//     console.log("Users updated successfully");
+//   } catch (error) {
+//     console.error("Error updating users:", error);
+//   }
+// };
+
+const updateUsers = async () => {
+  try {
+    if (!User || typeof User.find !== "function") {
+      throw new Error("User model is not properly defined or imported.");
+    }
+
+    // Fetch all users
+    const users = await User.find({});
+
+    // Create an array of update promises
+    const updatePromises = users.map((user) => {
+      return User.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            isActive: true,
+            lastUpdated: new Date(),
+            // newField: "defaultValue",
+            // followersCount: 0,
+            // Do not include 'followers' if you don't have a valid ObjectId to add
+            // followers: [...user.followers, new mongoose.Types.ObjectId('validObjectIdHere')],
+          },
+        }
+      );
+    });
+
+    // Wait for all update operations to complete
+    await Promise.all(updatePromises);
+    console.log("Users updated successfully");
+  } catch (error) {
+    console.error("Error updating users:", error);
+  }
+};
+
+updateUsers();
+
 
 mongoose
   .connect(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    connectTimeoutMS: 100000,
   })
-  .then(() => console.log("MongoDB connected here and successfully"))
-  .catch((error) => console.log("MongoDB connection failed", error));
+  .then(async () => {
+    //updateUsers();
+    console.log("Connected to MongoDB Atlas");
+    // await updateUsers(); // Call the function after successful connection
+  })
+  .catch((err) => {
+    console.error("Failed to connect to MongoDB Atlas:", err);
+  });
+
+server.listen(port, () => {
+  console.log(`Server is up and running on port ${port}`);
+});

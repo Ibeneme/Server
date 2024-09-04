@@ -108,12 +108,12 @@ const UserSchema = new mongoose.Schema(
       },
     ],
     following: { type: Boolean, default: false },
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // New field for followers
+    followersCount: { type: Number, default: 0 }, // New field for follower count
   },
   {
     timestamps: true,
   }
 );
 
-const User = mongoose.model("User", UserSchema);
-
-module.exports = User;
+module.exports = mongoose.model("User", UserSchema);
