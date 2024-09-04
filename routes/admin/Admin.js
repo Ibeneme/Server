@@ -313,6 +313,7 @@ router.get("/users-with-kyc", async (req, res) => {
   }
 });
 
+
 router.put("/approve-withdrawn-fund", async (req, res) => {
   try {
     const { userId, withdrawnFundId, status } = req.body;
@@ -412,6 +413,31 @@ router.put("/status/:id", logUpdate, async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
+  }
+});
+
+router.post('/toggle-verification', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Find the user by email
+    const user = await User.findOne({ email: email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Toggle the fields to true
+    user.verified = true;
+    user.provider = true;
+
+    // Save the updated user
+    await user.save();
+
+    // Send the response
+    res.status(200).json({ message: 'User verified and set as provider successfully', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
   }
 });
 
