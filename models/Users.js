@@ -19,12 +19,6 @@ const UserSchema = new mongoose.Schema(
       maxlength: 200,
       unique: true,
     },
-    // phoneNumber: {
-    //   type: String,
-    //   minlength: 3,
-    //   maxlength: 200,
-    //   default: null,
-    // },
     password: {
       type: String,
       required: true,
@@ -113,6 +107,7 @@ const UserSchema = new mongoose.Schema(
         status: { type: String },
       },
     ],
+    following: { type: Boolean, default: false },
   },
   {
     timestamps: true,

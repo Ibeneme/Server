@@ -17,6 +17,28 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Route to toggle the following field
+router.post("/toggle-follow/:userId", async (req, res) => {
+  try {
+    // Step 2: Find the user by ID
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    // Step 3: Toggle the following field
+    user.following = !user.following;
+
+    // Step 4: Save the updated user document
+    await user.save();
+
+    return res.status(200).json({ following: user.following });
+  } catch (error) {
+    return res.status(500).send("Server error");
+  }
+});
+
 router.get("/profile", (req, res) => {
   // Access the decoded token from the request object
   const user = req.user;
@@ -29,7 +51,7 @@ router.get("/providers", async (req, res) => {
     // Query the User collection for users where provider and verified are both true
     const providers = await User.find({
       provider: true,
-      verified: true
+      verified: true,
     });
     // Return the fetched users as a response
     res.status(200).json(providers);
@@ -225,7 +247,5 @@ router.delete("/users/delete-all", async (req, res) => {
       .json({ error: "Failed to delete users", details: error.message });
   }
 });
-
-
 
 module.exports = router;
