@@ -5,7 +5,8 @@ const {
   sendPostJoinCommunityNotification,
 } = require("../services/mailing/joinedCommunity");
 const bcrypt = require("bcrypt");
-
+const authMiddleware = require("../middleware/auth");
+const mongoose = require("mongoose");
 //Route to get all users
 router.get("/", async (req, res) => {
   try {
@@ -17,13 +18,24 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Route to toggle the following field
-router.post("/toggle-follow/:userId", async (req, res) => {
+router.post("/toggles-follow/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    const followerId = req.user._id;
-    const followerUsername = req.user.username;
+    const { followerId } = req.body;
 
+    if (!followerId) {
+      return res.status(400).send("Follower ID is required");
+    }
+
+    // Validate userId and followerId
+    if (
+      !mongoose.Types.ObjectId.isValid(userId) ||
+      !mongoose.Types.ObjectId.isValid(followerId)
+    ) {
+      return res.status(400).send("Invalid user or follower ID");
+    }
+
+    // Retrieve the user to follow and the follower
     const userToFollow = await User.findById(userId);
     const follower = await User.findById(followerId);
 
@@ -31,45 +43,152 @@ router.post("/toggle-follow/:userId", async (req, res) => {
       return res.status(404).send("User not found");
     }
 
+    // Ensure following is an array of ObjectId
+    if (!Array.isArray(follower.following)) {
+      follower.following = [];
+    }
+
     const isFollowing = userToFollow.followers.includes(followerId);
 
     if (isFollowing) {
       // Unfollow
       userToFollow.followers = userToFollow.followers.filter(
-        (id) => !id.equals(followerId)
+        (id) => id.toString() !== followerId
       );
       userToFollow.followersCount--;
-      await userToFollow.save();
 
       follower.following = follower.following.filter(
-        (id) => !id.equals(userId)
+        (id) => id.toString() !== userId
       );
-      await follower.save();
 
       console.log(
-        `User ${followerUsername} unfollowed ${userToFollow.username}`
+        `User ${follower.username} unfollowed ${userToFollow.username}`
       );
     } else {
       // Follow
       userToFollow.followers.push(followerId);
       userToFollow.followersCount++;
-      await userToFollow.save();
 
-      follower.following.push(userId);
-      await follower.save();
+      // Push valid ObjectId
+      if (!follower.following.includes(userId)) {
+        follower.following.push(userId);
+      }
 
-      console.log(`User ${followerUsername} followed ${userToFollow.username}`);
+      console.log(
+        `User ${follower.username} followed ${userToFollow.username}`
+      );
     }
 
-    res
-      .status(200)
-      .json({
-        following: !isFollowing,
-        followersCount: userToFollow.followersCount,
-      });
+    await userToFollow.save();
+    await follower.save();
+
+    res.status(200).json({
+      following: !isFollowing,
+      followersCount: userToFollow.followersCount,
+    });
   } catch (error) {
     console.error("Error toggling follow:", error);
     res.status(500).send("Server error");
+  }
+});
+router.post("/toggle-follow/:userId", async (req, res) => {
+  const { userId } = req.params;
+  const { followerId } = req.body;
+
+  try {
+    // Fetch the followed user by userId
+    const followedUser = await User.findById(userId);
+
+    if (!followedUser) {
+      return res.status(404).json({ message: "Followed user not found" });
+    }
+
+    // Fetch the follower by followerId
+    const followerUser = await User.findById(followerId);
+
+    if (!followerUser) {
+      return res.status(404).json({ message: "Follower not found" });
+    }
+
+    // Check if followerId is already in the followed user's followers array
+    const isFollowing = followedUser.followers.includes(followerId);
+
+    if (isFollowing) {
+      // If followerId exists, remove it and decrement the followers count
+      await User.findByIdAndUpdate(userId, {
+        $pull: { followers: followerId },
+        $inc: { followersCount: -1 },
+      });
+
+      // Remove the followed user's ID from the follower's freeCommunityFollowed array
+      await User.findByIdAndUpdate(followerId, {
+        $pull: { freeCommunityFollowed: userId },
+      });
+    } else {
+      // If followerId does not exist, add it and increment the followers count
+      await User.findByIdAndUpdate(userId, {
+        $addToSet: { followers: followerId },
+        $inc: { followersCount: 1 },
+      });
+
+      // Add the followed user's ID to the follower's freeCommunityFollowed array
+      await User.findByIdAndUpdate(followerId, {
+        $addToSet: { freeCommunityFollowed: userId },
+      });
+    }
+
+    // Respond with the updated followed user document
+    const updatedFollowedUser = await User.findById(userId);
+    res.status(200).json(updatedFollowedUser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Route to clear all items in the freeCommunityFollowed array for a specific user
+router.post("/clear-free-community-followed/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Find the user by userId
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Clear the freeCommunityFollowed array
+    user.freeCommunityFollowed = [];
+
+    // Save the updated user document
+    await user.save();
+
+    // Respond with a success message
+    res
+      .status(200)
+      .json({ message: "freeCommunityFollowed array cleared successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+router.get("/free-community-followed/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Fetch the user by userId
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Respond with the freeCommunityFollowed array
+    res.status(200).json({ freeCommunityFollowed: user.freeCommunityFollowed });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

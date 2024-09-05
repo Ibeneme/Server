@@ -49,6 +49,9 @@ const course = require("./routes/courses/courses.js");
 const walletaddress = require("./routes/wallets/walletAddress.js");
 const admin = require("./routes/admin/Admin.js");
 const adminAuth = require("./routes/admin/auth/Auth.js");
+const { v4: uuidv4 } = require("uuid");
+const FreeCommunityMessage = require("./models/FreeCommunityMessage.js");
+const freeCommunitySocketsRouter = require("./routes/freeCommunitySockets.js");
 
 require("dotenv").config();
 
@@ -68,6 +71,12 @@ const io = new Server(server, {
 //c19f62
 
 const communityIo = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+const freeCommunitySockets = new Server(server, {
   cors: {
     origin: "*",
   },
@@ -186,6 +195,82 @@ communityIo.on("connection", (socket) => {
   });
 });
 
+freeCommunitySockets.on("connection", (socket) => {
+  console.log("New client connected to freeCommunitySockets");
+
+  // Handle user joining a room
+  socket.on("joinRoomfreeCommunitySockets", ({ freeCommunityId }) => {
+    try {
+      // Join the room and emit a success message
+      socket.join(freeCommunityId);
+      console.log(`Client joined room ${freeCommunityId} successfully.`);
+      socket.emit("message", { text: "Successfully joined the room!" });
+
+      // Send existing messages in the room to the user
+      FreeCommunityMessage.findOne({ freeCommunityId })
+        .then((communityMessages) => {
+          if (communityMessages) {
+            socket.emit("initialMessages", communityMessages.messages);
+          }
+        })
+        .catch((error) => {
+          console.error("Error retrieving messages:", error.message);
+          socket.emit("error", { text: "Error retrieving messages" });
+        });
+    } catch (error) {
+      console.error("Error joining room:", error.message);
+      socket.emit("error", { text: "Error joining the room" });
+    }
+  });
+  // Handle sending messages
+  socket.on(
+    "sendMessagefreeCommunitySockets",
+    ({ userId, freeCommunityId, message }) => {
+      try {
+        // Find or create the community messages
+        FreeCommunityMessage.findOne({ freeCommunityId })
+          .then(async (communityMessages) => {
+            if (!communityMessages) {
+              communityMessages = new FreeCommunityMessage({
+                freeCommunityId,
+                messages: [],
+              });
+            }
+
+            // Add new message to the array
+            const newMessage = {
+              sender: userId,
+              message,
+              timestamp: new Date(),
+              freeCommunityId: freeCommunityId
+            }; // Use userId as sender
+            communityMessages.messages.push(newMessage);
+            await communityMessages.save();
+            freeCommunitySockets.emit("freeCommunityIdmessage", newMessage);
+            // Emit the message to the specified room
+           // freeCommunitySockets.to(freeCommunityId).emit("freeCommunityIdmessage", newMessage);
+            console.log(newMessage, "newMessage");
+            console.log(
+              `Message from user ${userId} sent to room ${freeCommunityId}: ${message}`
+            );
+          })
+          .catch((error) => {
+            console.error("Error handling message:", error.message);
+            socket.emit("error", { text: "Error handling message" });
+          });
+      } catch (error) {
+        console.error("Error sending message:", error.message);
+        socket.emit("error", { text: "Error sending message" });
+      }
+    }
+  );
+
+  // Handle disconnection
+  socket.on("disconnect", () => {
+    console.log("Client disconnected from freeCommunitySockets");
+  });
+});
+
 //https://server-3qpe.onrender.com/
 app.use("/api/v1/messages", messagesRouter);
 app.use("/api/v1/auth/register/", register);
@@ -202,6 +287,7 @@ app.use("/api/v1/auth/videos/", authMiddleware, videos);
 app.use("/api/v1/auth/verifyOTPs/", verifyOTP);
 app.use("/api/v1/auth/generateOTPs/", generateOTP);
 app.use("/api/v1/auth/generateOTP/", forgot);
+app.use("/api/v1/freeCommunitySockets/", freeCommunitySocketsRouter);
 
 app.use("/api/v1/post/create-post/", authMiddleware, createPost);
 app.use("/api/v1/post/all-posts/", authMiddleware, allPosts);
@@ -275,8 +361,8 @@ const updateUsers = async () => {
       throw new Error("User model is not properly defined or imported.");
     }
 
-    // Fetch all users
-    const users = await User.find({});
+    // Fetch all users who need to be updated
+    const users = await User.find({ provider: true, verified: true });
 
     // Create an array of update promises
     const updatePromises = users.map((user) => {
@@ -284,12 +370,7 @@ const updateUsers = async () => {
         { _id: user._id },
         {
           $set: {
-            isActive: true,
-            lastUpdated: new Date(),
-            // newField: "defaultValue",
-            // followersCount: 0,
-            // Do not include 'followers' if you don't have a valid ObjectId to add
-            // followers: [...user.followers, new mongoose.Types.ObjectId('validObjectIdHere')],
+            freeCommunityId: uuidv4(), // Generate and set a unique ID
           },
         }
       );
@@ -304,7 +385,6 @@ const updateUsers = async () => {
 };
 
 updateUsers();
-
 
 mongoose
   .connect(uri, {

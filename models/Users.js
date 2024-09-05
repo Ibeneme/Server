@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { v4: uuidv4 } = require('uuid');
 
 const UserSchema = new mongoose.Schema(
   {
@@ -59,7 +60,7 @@ const UserSchema = new mongoose.Schema(
     ],
     ratings: [
       {
-        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        user: { type: String },
         firstName: { type: String },
         lastName: { type: String },
         rating: { type: Number, required: true },
@@ -107,13 +108,37 @@ const UserSchema = new mongoose.Schema(
         status: { type: String },
       },
     ],
-    following: { type: Boolean, default: false },
-    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // New field for followers
-    followersCount: { type: Number, default: 0 }, // New field for follower count
+    following: [{ type: String }],
+    followers: [{ type: String }],
+    followersCount: { type: Number, default: 0 },
+    freeCommunityId: { type: String, default: null }, // Added field
+    freeCommunityFollowed: [{ type: String }],
   },
   {
     timestamps: true,
   }
 );
+
+// Virtual field for average rating
+UserSchema.virtual('averageRating').get(function () {
+  if (this.ratings.length === 0) {
+    return 0;
+  }
+  
+  const totalRating = this.ratings.reduce((acc, rating) => acc + rating.rating, 0);
+  const average = totalRating / this.ratings.length;
+  
+  // Clamp the average between 0 and 5
+  return Math.min(Math.max(average, 0), 5);
+});
+
+// Pre-save hook to set freeCommunityId if conditions are met
+UserSchema.pre('save', function (next) {
+  // Only set freeCommunityId during the creation of the document, not on updates
+  if (this.isNew && this.provider && this.verified && !this.freeCommunityId) {
+    this.freeCommunityId = uuidv4();
+  }
+  next();
+});
 
 module.exports = mongoose.model("User", UserSchema);
