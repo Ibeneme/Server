@@ -130,6 +130,9 @@ router.post(
         data: fileBuffer,
         title: title,
       });
+
+
+      
       const bucketName = "trader-signal-app-v1"; // Name of the bucket
       const uploadedFileName = uploadResponse.data.fileName;
       const avatarUrl = `https://f005.backblazeb2.com/file/${bucketName}/${uploadedFileName}`;
