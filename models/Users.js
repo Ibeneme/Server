@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require("uuid");
 
 const UserSchema = new mongoose.Schema(
   {
@@ -11,6 +11,12 @@ const UserSchema = new mongoose.Schema(
     communitySubWaiting: { type: Boolean, default: false },
     communitySubFailed: { type: Boolean, default: false },
     communitySub: { type: Boolean, default: false },
+    academySubWaiting: { type: Boolean, default: false },
+    academySubFailed: { type: Boolean, default: false },
+    academySub: { type: Boolean, default: false },
+    proTraderSubWaiting: { type: Boolean, default: false },
+    proTraderSubFailed: { type: Boolean, default: false },
+    proTraderSub: { type: Boolean, default: false },
     deleted: { type: Boolean, default: false },
     firstName: { type: String, required: true, minlength: 3, maxlength: 30 },
     lastName: { type: String, required: true, minlength: 3, maxlength: 30 },
@@ -69,10 +75,19 @@ const UserSchema = new mongoose.Schema(
         profilePhoto: { type: String, default: null },
       },
     ],
+    reported: [
+      {
+        user: { type: String },
+        firstName: { type: String },
+        lastName: { type: String },
+        report: { type: String },
+        imageUrl: { type: String },
+      },
+    ],
     createdSubscriptions: [
       { type: mongoose.Schema.Types.ObjectId, ref: "Subscription" },
     ],
-    niche: { type: String, default: null },
+    niche: [{ type: String }],
     totalBalance: {
       type: Number,
       default: 0,
@@ -113,31 +128,51 @@ const UserSchema = new mongoose.Schema(
     followersCount: { type: Number, default: 0 },
     freeCommunityId: { type: String, default: null }, // Added field
     freeCommunityFollowed: [{ type: String }],
+    timeFrameOfTrades: [{ type: String }],
+    assestTraded: [{ type: String }],
+    tradingPerformanceData: { type: String },
+    proofOfTradingHistory: { type: String },
+    clearDescriptionOfStrategy: { type: String },
+    riskProfile: { type: String },
+    breakdownsSubscriptionsBenefits: { type: String },
+    dateBecameProvider: { type: Date, default: null }, // New field for tracking provider activation date
   },
   {
-    timestamps: true,
+    timestamps: true, // This adds createdAt and updatedAt fields automatically
   }
 );
 
 // Virtual field for average rating
-UserSchema.virtual('averageRating').get(function () {
+UserSchema.virtual("averageRating").get(function () {
   if (this.ratings.length === 0) {
     return 0;
   }
-  
-  const totalRating = this.ratings.reduce((acc, rating) => acc + rating.rating, 0);
+
+  const totalRating = this.ratings.reduce(
+    (acc, rating) => acc + rating.rating,
+    0
+  );
   const average = totalRating / this.ratings.length;
-  
-  // Clamp the average between 0 and 5
+
   return Math.min(Math.max(average, 0), 5);
 });
 
-// Pre-save hook to set freeCommunityId if conditions are met
-UserSchema.pre('save', function (next) {
+// Pre-save hook to set freeCommunityId and track provider activation date
+UserSchema.pre("save", function (next) {
   // Only set freeCommunityId during the creation of the document, not on updates
   if (this.isNew && this.provider && this.verified && !this.freeCommunityId) {
     this.freeCommunityId = uuidv4();
   }
+
+  // If provider status changes to true, set the dateBecameProvider field
+  if (
+    this.isModified("provider") &&
+    this.provider &&
+    !this.dateBecameProvider
+  ) {
+    this.dateBecameProvider = new Date();
+  }
+
   next();
 });
 

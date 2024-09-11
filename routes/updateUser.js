@@ -15,6 +15,8 @@ router.put("/", async (req, res) => {
     }
     const updates = req.body;
     console.log(updates, "updates");
+
+    // Capitalize first name and last name
     if (updates.firstName) {
       updates.firstName =
         updates.firstName.charAt(0).toUpperCase() +
@@ -29,6 +31,23 @@ router.put("/", async (req, res) => {
     // Convert email to lowercase
     if (updates.email) {
       updates.email = updates.email.toLowerCase();
+    }
+
+    // Additional fields being updated
+    if (updates.niches) {
+      updates.niche = updates.niches.map((niche) => niche.trim());
+    }
+    if (updates.bio) {
+      updates.bio = updates.bio.trim();
+    }
+    if (updates.clearDescriptionOfStrategy) {
+      updates.clearDescriptionOfStrategy = updates.clearDescriptionOfStrategy.trim();
+    }
+    if (updates.riskProfile) {
+      updates.riskProfile = updates.riskProfile.trim();
+    }
+    if (updates.breakdownsSubscriptionsBenefits) {
+      updates.breakdownsSubscriptionsBenefits = updates.breakdownsSubscriptionsBenefits.trim();
     }
 
     const updatedUser = await User.findOneAndUpdate(

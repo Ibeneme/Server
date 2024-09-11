@@ -44,6 +44,7 @@ const initializeChatRouter = require("./routes/chats/chatRouter.js");
 const User = require("./models/Users.js");
 const CommunityChat = require("./models/CommunityChat.js");
 const commsub = require("./routes/subscriptions/comStatus");
+const request = require("./routes/subscriptions/comNoToken.js");
 const YOUR_THRESHOLD_VALUE = 30; // Define your threshold value here
 const course = require("./routes/courses/courses.js");
 const walletaddress = require("./routes/wallets/walletAddress.js");
@@ -195,6 +196,63 @@ communityIo.on("connection", (socket) => {
   });
 });
 
+const B2 = require("backblaze-b2");
+const multer = require("multer");
+
+// Initialize Backblaze B2
+const b2 = new B2({
+  applicationKeyId: "e8b3c0128769",
+  applicationKey: "0058f4534e105eb24f3b135703608c66720edf0beb",
+});
+
+// Authorize Backblaze B2
+b2.authorize().catch((err) =>
+  console.error("Backblaze B2 Authorization failed:", err)
+);
+
+// Set the bucket name and ID
+const BUCKET_NAME = "trader-signal-app-v1";
+const BUCKET_ID = "0e888bf37c0091f288e70619";
+
+// Multer setup to handle file buffer
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+// const axios = require('axios');
+// const FormData = require('form-data');
+// const fs = require('fs');
+// const path = require('path');
+
+const uploadToBackblaze = async (file, fileName) => {
+  try {
+    console.log(`Uploading ${file} to Backblaze B2...`);
+    const uploadUrlResponse = await b2.getUploadUrl({ bucketId: BUCKET_ID });
+    const { uploadUrl, authorizationToken } = uploadUrlResponse.data;
+    console.log(`Upload URL obtained: ${uploadUrl}`);
+
+    // Upload the file
+    const uploadResponse = await b2.uploadFile({
+      uploadUrl: uploadUrlResponse.data.uploadUrl,
+      uploadAuthToken: uploadUrlResponse.data.authorizationToken,
+      fileName: `${BUCKET_NAME}/${fileName}`,
+      data: file.buffer,
+      mime: file.mimetype,
+      //title: title,
+    });
+    console.log(`${fileName} uploaded successfully.`);
+    const uploadedFileName = uploadResponse.data.fileName;
+    const avatarUrl = `https://f005.backblazeb2.com/file/${BUCKET_NAME}/${uploadedFileName}`;
+    console.log(avatarUrl, "avatarUrl");
+    // Return the file URL from Backblaze
+    return avatarUrl;
+  } catch (error) {
+    console.error("Backblaze Upload Error:", error);
+    throw new Error("Failed to upload file to Backblaze B2");
+  }
+};
+const fs = require("fs"); // For reading the file from the URI
+const path = require("path"); // For file path handling
+const axios = require("axios");
+
 freeCommunitySockets.on("connection", (socket) => {
   console.log("New client connected to freeCommunitySockets");
 
@@ -225,39 +283,93 @@ freeCommunitySockets.on("connection", (socket) => {
   // Handle sending messages
   socket.on(
     "sendMessagefreeCommunitySockets",
-    ({ userId, freeCommunityId, message }) => {
-      try {
-        // Find or create the community messages
-        FreeCommunityMessage.findOne({ freeCommunityId })
-          .then(async (communityMessages) => {
-            if (!communityMessages) {
-              communityMessages = new FreeCommunityMessage({
-                freeCommunityId,
-                messages: [],
-              });
-            }
 
-            // Add new message to the array
-            const newMessage = {
-              sender: userId,
-              message,
-              timestamp: new Date(),
-              freeCommunityId: freeCommunityId
-            }; // Use userId as sender
-            communityMessages.messages.push(newMessage);
-            await communityMessages.save();
-            freeCommunitySockets.emit("freeCommunityIdmessage", newMessage);
-            // Emit the message to the specified room
-           // freeCommunitySockets.to(freeCommunityId).emit("freeCommunityIdmessage", newMessage);
-            console.log(newMessage, "newMessage");
-            console.log(
-              `Message from user ${userId} sent to room ${freeCommunityId}: ${message}`
+    async ({
+      userId,
+      freeCommunityId,
+      message,
+      image,
+      repliedMessage,
+      repliedImageUrl,
+      repliedMessageID,
+    }) => {
+      try {
+        let imageUrl = null;
+
+        if (image && image.length > 0 && image[0] && image[0][1]) {
+          const fileData = image[0][1]; // Extract file data from the image
+          const { uri, type, name } = fileData;
+          const fileName = `${Date.now()}_${name || "image.jpg"}`; // Fallback filename
+
+          try {
+            console.log(`Reading file from ${uri}...`);
+
+            // Convert file URI to buffer, remove 'file://' prefix
+            const fileBuffer = fs.readFileSync(
+              path.resolve(uri.replace("file://", ""))
             );
-          })
-          .catch((error) => {
-            console.error("Error handling message:", error.message);
-            socket.emit("error", { text: "Error handling message" });
+
+            console.log(`Uploading ${fileName} to Backblaze B2...`);
+
+            // Get upload URL from Backblaze B2
+            const uploadUrlResponse = await b2.getUploadUrl({
+              bucketId: BUCKET_ID,
+            });
+            const { uploadUrl, authorizationToken } = uploadUrlResponse.data;
+
+            // Upload the file to Backblaze B2
+            const uploadResponse = await b2.uploadFile({
+              uploadUrl,
+              uploadAuthToken: authorizationToken,
+              fileName: `${BUCKET_NAME}/${fileName}`,
+              data: fileBuffer, // Upload the file buffer
+              mime: type, // Set MIME type
+            });
+
+            console.log(`${fileName} uploaded successfully.`);
+            imageUrl = `https://f005.backblazeb2.com/file/${BUCKET_NAME}/${uploadResponse.data.fileName}`;
+            console.log(imageUrl, "imageUrl");
+          } catch (error) {
+            console.error("Backblaze Upload Error:", error);
+            throw new Error("Failed to upload file to Backblaze B2");
+          }
+        }
+
+        console.log(imageUrl, "Final imageUrl");
+
+        // Find or create the community messages
+        let communityMessages = await FreeCommunityMessage.findOne({
+          freeCommunityId,
+        });
+
+        if (!communityMessages) {
+          communityMessages = new FreeCommunityMessage({
+            freeCommunityId,
+            messages: [],
           });
+        }
+
+        // Create the new message
+        const newMessage = {
+          sender: userId,
+          message: message || "", // Ensure the message is a string (even empty)
+          timestamp: new Date(),
+          freeCommunityId,
+          imageUrl: imageUrl || null,
+          repliedMessage: repliedMessage || null,
+          repliedImageUrl: repliedImageUrl || null,
+          repliedMessageID: repliedMessageID || null, // Only add the image URL if it exists
+        };
+
+        // Save the new message
+        communityMessages.messages.push(newMessage);
+        await communityMessages.save();
+        freeCommunitySockets.emit("freeCommunityIdmessage", newMessage);
+
+        console.log(newMessage, "Message successfully sent.");
+        console.log(
+          `Message from user ${userId} sent to room ${freeCommunityId}: ${message}`
+        );
       } catch (error) {
         console.error("Error sending message:", error.message);
         socket.emit("error", { text: "Error sending message" });
@@ -308,6 +420,7 @@ app.use("/api/v1/rating/", authMiddleware, rating);
 app.use("/api/v1/allCommunityChats/", allCommunityChats);
 app.use("/api/v1/waiting-list", waitingList);
 app.use("/api/v1/communitysub", authMiddleware, commsub);
+app.use("/api/v1/requests", request);
 app.use("/api/v1/courses", course);
 app.use("/api/v1/wallet-addresses", walletaddress);
 app.use("/api/v1/admin", admin);

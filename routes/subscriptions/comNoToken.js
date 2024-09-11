@@ -36,7 +36,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get("/pro-trader", async (req, res) => {
   try {
     const statuses = await ProTradersStatus.find().sort({ createdAt: -1 }); // Sort by createdAt timestamp in descending order
     res.status(200).json({ statuses });
@@ -46,7 +46,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get("/academy", async (req, res) => {
   try {
     const statuses = await AcademyComStatus.find().sort({ createdAt: -1 }); // Sort by createdAt timestamp in descending order
     res.status(200).json({ statuses });
@@ -129,6 +129,86 @@ router.get("/user/academy", async (req, res) => {
   } catch (error) {
     console.error("Error fetching user statuses:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+router.post("/update-provider", async (req, res) => {
+  const { userId } = req.body; // Extract userId from request body
+
+  try {
+    // Find the user by their ID
+    let user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update the provider field to true
+    user.provider = true;
+
+    // Save the updated user information
+    await user.save();
+
+    // Send success response
+    res.status(200).json({
+      message: "Provider status updated successfully",
+      user,
+    });
+  } catch (error) {
+    // Send error response in case of any issues
+    console.error(error);
+    res.status(500).json({ message: "An error occurred", error });
+  }
+});
+
+router.post("/report", async (req, res) => {
+  // const { id } = req.params; // Get user ID from URL
+  const { report, id } = req.body; // Get report data from request body
+
+  try {
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.reported.push({
+      user: id,
+      report,
+    });
+    await user.save();
+
+    res.status(200).json({
+      message: "Report added successfully",
+      reported: user.reported,
+    });
+  } catch (error) {
+    console.error("Error adding report:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Route to get all reports
+router.get("/reports", async (req, res) => {
+  try {
+    // Find all users who have made at least one report
+    const usersWithReports = await User.find({
+      "reported.0": { $exists: true },
+    })
+      .select("firstName lastName reported") // Select only relevant fields
+      .populate("reported.user", "firstName lastName"); // Populate the reported user details
+
+    if (!usersWithReports || usersWithReports.length === 0) {
+      return res.status(404).json({ message: "No reports found" });
+    }
+
+    // Respond with the users and their reports
+    res.status(200).json({
+      message: "Reports retrieved successfully",
+      usersWithReports,
+    });
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -298,6 +378,11 @@ router.put("/:userId/:statusId", async (req, res) => {
       }, 10000000); // 30 days in milliseconds
     }
 
+    if (status === "rejected") {
+      user.communitySub = false;
+      user.communitySubWaiting = false;
+    }
+
     // Update the status
     existingStatus.status = status;
 
@@ -346,6 +431,29 @@ router.put("/:userId/:statusId", async (req, res) => {
         "Your subscription is expiring tomorrow. Please renew to continue accessing our services.",
         oneDayBeforeExpiration
       );
+      if (status === "accepted") {
+        user.communitySub = true;
+        await user.save();
+      }
+
+      // setTimeout(async () => {
+      //   existingStatus.isExpired = true;
+      //   existingStatus.status = "expired";
+      //   await existingStatus.save();
+      // }, 30 * 24 * 60 * 60 * 1000);
+      // Set timeout to reset communitySub to false after 30 days
+      // setTimeout(async () => {
+      //   user.communitySub = false;
+      //   await user.save();
+      // }, 30 * 24 * 60 * 60 * 1000); // 30 days in milliseconds
+    }
+
+    // If status is accepted, schedule expiration and reminder emails
+    if (status === "rejected") {
+      user.communitySub = false;
+      user.communitySubWaiting = false;
+      await user.save();
+
       if (status === "accepted") {
         user.communitySub = true;
         await user.save();
@@ -499,6 +607,13 @@ router.put("/:userId/:statusId/protrader", async (req, res) => {
         user.proTraderSubWaiting = false;
         await user.save();
       }, 10000000); // 30 days in milliseconds
+    }
+
+    // If the subscription status is 'accepted', update proTraderSub field to true
+    if (status === "rejected") {
+      user.proTraderSub = false;
+      user.proTraderSubWaiting = false;
+      await user.save();
     }
 
     // Update the status
@@ -688,6 +803,12 @@ router.put("/:userId/:statusId/academy", async (req, res) => {
     const existingStatus = await AcademyComStatus.findById(statusId);
     if (!existingStatus) {
       return res.status(404).json({ error: "Status not found" });
+    }
+    // If the subscription status is 'accepted', update proTraderSub field to true
+    if (status === "rejected") {
+      user.academySub = false;
+      user.academySubWaiting = false;
+      await user.save();
     }
 
     // If the subscription status is 'accepted', update academySub field to true

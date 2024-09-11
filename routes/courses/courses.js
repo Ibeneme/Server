@@ -70,6 +70,27 @@ const getUserDetails = async (userIds) => {
   }
 };
 
+
+const getTimeDifference = timestamp => {
+  const currentTime = new Date();
+  const pastTime = new Date(timestamp);
+  const timeDifference = Math.floor(
+    (currentTime.getTime() - pastTime.getTime()) / 1000,
+  );
+
+  if (timeDifference < 60) {
+    return `${timeDifference} second${timeDifference !== 1 ? 's' : ''} ago`;
+  } else if (timeDifference < 3600) {
+    const minutes = Math.floor(timeDifference / 60);
+    return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  } else if (timeDifference < 86400) {
+    const hours = Math.floor(timeDifference / 3600);
+    return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  } else {
+    return timestamp;
+  }
+};
+
 router.post("/create-course", upload.single("image"), async (req, res) => {
   const { title, description, rating, category } = req.body;
 
@@ -87,6 +108,7 @@ router.post("/create-course", upload.single("image"), async (req, res) => {
     "_"
   )}`;
 
+  
   try {
     // Get upload URL
     const response = await b2.getUploadUrl({

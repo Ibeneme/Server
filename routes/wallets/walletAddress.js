@@ -58,4 +58,26 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// Route to get all wallet addresses
+router.get("/", async (req, res) => {
+  try {
+    const wallets = await WalletAddresses.find();
+    res.json(wallets);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Route to delete a wallet address by ID
+router.delete("/:id", async (req, res) => {
+  try {
+    const wallet = await WalletAddresses.findByIdAndDelete(req.params.id);
+    if (!wallet) return res.status(404).json({ message: "Wallet not found" });
+    res.json({ message: "Wallet deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
 module.exports = router;

@@ -15,7 +15,11 @@ const FreeCommunityMessageSchema = new mongoose.Schema(
         },
         message: {
           type: String,
-          required: true,
+          // Optional for text messages
+        },
+        imageUrl: {
+          type: String,
+          // Optional for image messages
         },
         timestamp: {
           type: Date,
@@ -23,13 +27,23 @@ const FreeCommunityMessageSchema = new mongoose.Schema(
         },
         freeCommunityId: {
           type: String,
-         // required: true,
+          // Optional for context
+        },
+        repliedMessage: {
+          type: String,
+          // Optional for context
+        },
+        repliedImageUrl: {
+          type: String,
+        },
+        repliedMessageID: {
+          type: String,
         },
       },
     ],
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt fields automatically
+    timestamps: true, // Adds createdAt aznd updatedAt fields automatically
   }
 );
 
