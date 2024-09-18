@@ -53,6 +53,7 @@ const adminAuth = require("./routes/admin/auth/Auth.js");
 const { v4: uuidv4 } = require("uuid");
 const FreeCommunityMessage = require("./models/FreeCommunityMessage.js");
 const freeCommunitySocketsRouter = require("./routes/freeCommunitySockets.js");
+const homeCards = require("./routes/HomeImagesRouter.js");
 
 require("dotenv").config();
 
@@ -425,9 +426,9 @@ app.use("/api/v1/courses", course);
 app.use("/api/v1/wallet-addresses", walletaddress);
 app.use("/api/v1/admin", admin);
 app.use("/api/v1/admin-auth", adminAuth);
-//app.use("/api/v1/", authMiddleware, com);
-
+app.use("/api/v1/home-cards", homeCards);
 app.disable("x-powered-by");
+
 
 const uri =
   "mongodb+srv://ibeneme_:Ibeneme_1996@tradersignalapp.qbqd2hz.mongodb.net/?retryWrites=true&w=majority&appName=TraderSignalApp";
@@ -435,22 +436,13 @@ app.get("/", (req, res) => {
   res.send("Hello, World people todayyyy!");
 });
 
+
 // const updateUsers = async () => {
 //   try {
 //     if (!User || typeof User.find !== "function") {
 //       throw new Error("User model is not properly defined or imported.");
 //     }
 
-//     // Fetch all users
-//     const users = await User.find({});
-
-//     // Create an array of update promises
-//     const updatePromises = users.map((user) => {
-//       return User.updateOne(
-//         { _id: user._id },
-//         {
-//           $set: {
-//             isActive: true,
 //             lastUpdated: new Date(),
 //             newField: "defaultValue",
 //             followersCount: user.followers.length,

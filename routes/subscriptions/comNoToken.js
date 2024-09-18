@@ -12,6 +12,9 @@ const {
 const ComStatus = require("../../models/Providers/ComStatus");
 const ProTradersStatus = require("../../models/Providers/ProvidersCom");
 const AcademyComStatus = require("../../models/Providers/AcademyCom");
+const Subscription = require("../../models/Providers/Subscription");
+const Status = require("../../models/Providers/Status");
+const Post = require("../../models/Providers/Post");
 const YOUR_THRESHOLD_VALUE = 30; // Define your threshold value here
 
 // Backblaze B2 credentials
@@ -79,6 +82,187 @@ router.get("/user", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+// Route to get all posts with specific fields
+router.get("/posts/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Find the post by ID
+    const post = await Post.findById(id);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found." });
+    }
+
+    res.status(200).json(post);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error. Please try again later." });
+  }
+});
+
+router.get("/author/:authorId", async (req, res) => {
+  const { authorId } = req.params;
+
+  try {
+    // Find all posts by the given author
+    const posts = await Post.find({ author: authorId }).populate(
+      "author",
+      "firstName lastName"
+    ); // Populating author's first and last name
+
+    if (!posts.length) {
+      return res
+        .status(404)
+        .json({ message: "No posts found for this author." });
+    }
+
+    // If the author has more than one post, return them all in an array
+    res.status(200).json({
+      authorId: authorId,
+      posts: posts, // All posts by this author in an array
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error. Please try again later." });
+  }
+});
+
+router.put("/:userId/:statusId/accept-reject", async (req, res) => {
+  try {
+    const { status } = req.body;
+    const { userId, statusId } = req.params;
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Find the status by ID
+    const existingStatus = await Status.findById(statusId);
+    if (!existingStatus) {
+      return res.status(404).json({ error: "Status not found" });
+    }
+
+    // Update the status
+    existingStatus.status = status;
+
+    // Save the updated status
+    await existingStatus.save();
+
+    // Handle subscription logic based on status
+    if (status === "accepted") {
+      await handleAcceptedStatus(user, existingStatus);
+    } else if (status === "pending" || status === "expired") {
+      await handlePendingOrExpiredStatus(user, existingStatus);
+    }
+
+    res.status(202).json({ message: "Status updated successfully" });
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+async function handleAcceptedStatus(user, existingStatus) {
+  try {
+    const subscription = await Subscription.findById(
+      existingStatus.subscriptionId
+    );
+    if (!subscription) {
+      throw new Error("Subscription not found");
+    }
+
+    // Add user to the list of subscribed users
+    subscription.users.push({
+      user: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      profilePhoto: user.profilePhoto,
+      subscriptionDate: new Date(),
+      expirationDate: new Date(
+        Date.now() + subscription.durationInDays * 24 * 60 * 60 * 1000
+      ),
+      email: user.email,
+      amountPaid: subscription.price,
+      durationPaidFor: subscription.durationInDays,
+    });
+
+    // Save the updated subscription
+    await subscription.save();
+    // Find the user who created the subscription and update totalEarnings
+    const subscriptionCreator = await User.findById(subscription.creator);
+    if (!subscriptionCreator) {
+      throw new Error("Subscription creator not found");
+    }
+
+    // Update totalEarnings of the subscription creator
+    subscriptionCreator.totalEarnings += subscription.price;
+
+    // Update totalEarnings of the user
+    //user.totalEarnings += subscription.price;
+
+    console.log(subscriptionCreator, "useruser");
+    // Update earnings array with details of the earnings
+    subscriptionCreator.earnings.push({
+      amountEarned: subscription.price,
+      subscriptionId: subscription._id,
+      subscriptionTitle: subscription.title,
+      subscriberFirstName: user.firstName,
+      subscriberLastName: user.lastName,
+      timestamp: new Date(),
+      status: "accepted",
+      durationIndays: subscription.durationInDays,
+    });
+
+    await subscriptionCreator.save();
+
+    // Schedule expiration and reminder emails
+    const expirationDate = new Date();
+    expirationDate.setDate(
+      expirationDate.getDate() + subscription.durationInDays
+    );
+
+    // Send expiration notification
+    sendSubscriptionStatusNotification(
+      user,
+      "Your subscription has expired.",
+      expirationDate
+    );
+
+    // Set timeout to automatically mark subscription as expired
+    setTimeout(async () => {
+      subscription.status = "expired";
+      await subscription.save();
+    }, subscription.durationInDays * 24 * 60 * 60 * 1000);
+  } catch (error) {
+    console.error("Error handling accepted status:", error);
+    throw error;
+  }
+}
+
+async function handlePendingOrExpiredStatus(user, existingStatus) {
+  try {
+    const subscription = await Subscription.findById(
+      existingStatus.subscriptionId
+    );
+    if (!subscription) {
+      throw new Error("Subscription not found");
+    }
+
+    // Remove user from the list of subscribed users
+    subscription.users = subscription.users.filter(
+      (subscribedUser) => subscribedUser.user.toString() !== user._id.toString()
+    );
+
+    // Save the updated subscription
+    await subscription.save();
+  } catch (error) {
+    console.error("Error handling pending or expired status:", error);
+    throw error;
+  }
+}
 
 router.get("/user/pro-trader", async (req, res) => {
   try {
